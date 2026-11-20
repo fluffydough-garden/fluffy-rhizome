@@ -11,7 +11,7 @@ const block = f => {
 };
 let fail = 0;
 const ref = block("lib/markdown.js");
-for (const f of ["public/admin/index.html", "public/index.html"]) {
+for (const f of ["public/admin/index.html", "public/index.html", "public/spore/index.html"]) {
   if (block(f) !== ref) { console.error(`✗ ${f}의 rhizomeMd가 lib/markdown.js와 달라요`); fail++; }
   else console.log(`✓ ${f} 같음`);
 }

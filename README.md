@@ -29,6 +29,7 @@ fetch("https://rhizome-webzine.vercel.app/api/rhizome")
 ## 구조
 
 - `public/index.html` 웹진(첫 화면) — 그래프와 갤러리 보기. 열 때마다 `/api/rhizome`에서 발행된 글을 읽어 옴. 발행된 글이 없으면 빈 화면, 서버에 못 닿으면 이 브라우저에 저장된 마지막 글(그것도 없으면 예시 글)을 보여줌. 탭으로 돌아오면 바뀐 글이 있는지 다시 확인함
+- `public/spore/index.html` 포자 컨셉 웹진 (`/spore`, 브랜치 `concept-spore`) — MYCELIUM ARCHIVE. 개념(태그·카테고리)=포자, 연결=균사, 글=자실체. 개념을 누르면 균사가 자라고(여러 개면 균총이 겹침), 글을 열면 우측 패널과 함께 포자가 퍼짐. 내가 읽은 경로는 ‘나의 균사’(이 브라우저에만 저장). 주소 `#c=개념&p=글ID`로 공유·뒤로 가기. 글 크기는 글자수 구간 1~5(5000자 이상=5, 그 아래는 상대 4등분). 배경 이미지·영상은 파일 위쪽 `MEDIA`에 경로를 넣으면 됨. 같은 `/api/rhizome`을 읽어 어드민 공유
 - `public/admin/index.html` 어드민 (`/admin`, 검색엔진 noindex)
 - `public/fonts/` 웹진 글꼴
 - `lib/markdown.js` 마크다운 렌더러 — 웹진·어드민·API가 같은 함수를 씀. 고친 뒤 `node scripts/check-markdown.mjs`
