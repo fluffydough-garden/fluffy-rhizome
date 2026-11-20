@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="ko" class="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>부드러운 리좀 FLUFFY RHIZOME</title>
+<style>
+/* ---------- fonts: English + digits = Space Mono, Hangul + all punctuation = kigsans ---------- */
+@font-face{font-family:"Space Mono";src:url("fonts/SpaceMono-Regular.woff") format("woff");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"Space Mono";src:url("fonts/SpaceMono-Bold.woff") format("woff");font-weight:700;font-style:normal;font-display:swap}
+@font-face{font-family:"Space Mono";src:url("fonts/SpaceMono-Italic.woff") format("woff");font-weight:400;font-style:italic;font-display:swap}
+@font-face{font-family:"Space Mono";src:url("fonts/SpaceMono-BoldItalic.woff") format("woff");font-weight:700;font-style:italic;font-display:swap}
+/* Hangul + punctuation = kigsans (긱산스). display = Black, headings = Bold, body = Light/Regular/Medium/Bold/Black by weight */
+@font-face{font-family:"Kig Display";src:url("fonts/kigsans-Black.otf") format("opentype");font-weight:100 900;font-display:swap;unicode-range:U+0020-002F,U+003A-0040,U+005B-0060,U+007B-007E,U+00A0-00BF,U+00D7,U+00F7,U+1100-11FF,U+2010-205E,U+2190-21FF,U+2460-24FF,U+25A0-25FF,U+2600-26FF,U+3000-303F,U+3130-318F,U+3200-32FF,U+A960-A97F,U+AC00-D7A3,U+D7B0-D7FF,U+FF00-FFEF}
+@font-face{font-family:"Kig Head";src:url("fonts/kigsans-Bold.otf") format("opentype");font-weight:100 900;font-display:swap;unicode-range:U+0020-002F,U+003A-0040,U+005B-0060,U+007B-007E,U+00A0-00BF,U+00D7,U+00F7,U+1100-11FF,U+2010-205E,U+2190-21FF,U+2460-24FF,U+25A0-25FF,U+2600-26FF,U+3000-303F,U+3130-318F,U+3200-32FF,U+A960-A97F,U+AC00-D7A3,U+D7B0-D7FF,U+FF00-FFEF}
+@font-face{font-family:"Kig Body";src:url("fonts/kigsans-Light.otf") format("opentype");font-weight:300;font-display:swap;unicode-range:U+0020-002F,U+003A-0040,U+005B-0060,U+007B-007E,U+00A0-00BF,U+00D7,U+00F7,U+1100-11FF,U+2010-205E,U+2190-21FF,U+2460-24FF,U+25A0-25FF,U+2600-26FF,U+3000-303F,U+3130-318F,U+3200-32FF,U+A960-A97F,U+AC00-D7A3,U+D7B0-D7FF,U+FF00-FFEF}
+@font-face{font-family:"Kig Body";src:url("fonts/kigsans-Regular.otf") format("opentype");font-weight:400;font-display:swap;unicode-range:U+0020-002F,U+003A-0040,U+005B-0060,U+007B-007E,U+00A0-00BF,U+00D7,U+00F7,U+1100-11FF,U+2010-205E,U+2190-21FF,U+2460-24FF,U+25A0-25FF,U+2600-26FF,U+3000-303F,U+3130-318F,U+3200-32FF,U+A960-A97F,U+AC00-D7A3,U+D7B0-D7FF,U+FF00-FFEF}
+@font-face{font-family:"Kig Body";src:url("fonts/kigsans-Medium.otf") format("opentype");font-weight:500;font-display:swap;unicode-range:U+0020-002F,U+003A-0040,U+005B-0060,U+007B-007E,U+00A0-00BF,U+00D7,U+00F7,U+1100-11FF,U+2010-205E,U+2190-21FF,U+2460-24FF,U+25A0-25FF,U+2600-26FF,U+3000-303F,U+3130-318F,U+3200-32FF,U+A960-A97F,U+AC00-D7A3,U+D7B0-D7FF,U+FF00-FFEF}
+@font-face{font-family:"Kig Body";src:url("fonts/kigsans-Bold.otf") format("opentype");font-weight:700;font-display:swap;unicode-range:U+0020-002F,U+003A-0040,U+005B-0060,U+007B-007E,U+00A0-00BF,U+00D7,U+00F7,U+1100-11FF,U+2010-205E,U+2190-21FF,U+2460-24FF,U+25A0-25FF,U+2600-26FF,U+3000-303F,U+3130-318F,U+3200-32FF,U+A960-A97F,U+AC00-D7A3,U+D7B0-D7FF,U+FF00-FFEF}
+@font-face{font-family:"Kig Body";src:url("fonts/kigsans-Black.otf") format("opentype");font-weight:900;font-display:swap;unicode-range:U+0020-002F,U+003A-0040,U+005B-0060,U+007B-007E,U+00A0-00BF,U+00D7,U+00F7,U+1100-11FF,U+2010-205E,U+2190-21FF,U+2460-24FF,U+25A0-25FF,U+2600-26FF,U+3000-303F,U+3130-318F,U+3200-32FF,U+A960-A97F,U+AC00-D7A3,U+D7B0-D7FF,U+FF00-FFEF}
+
+html{
+  /* Dell 1996: black page frame, black top banner, square flat color blocks, yellow stickers, red reserved for one callout.
+     Light (.light) by default; dark only when the viewer toggles it. Layout: framed full-screen graph/gallery under a black banner */
+  --frame:#000000;
+  /* chrome = top banner + page frame; follows the theme */
+  --chrome:#000000; --chrome-ink:#ffffff; --chrome-muted:#d9d9d9; --chrome-pill:#2b2b2b; --chrome-line:rgba(255,255,255,.12);
+  --canvas:#141414;
+  --surface:#1f1f1f;
+  --surface-2:#2b2b2b;
+  --ink:#ffffff;
+  --body:#e6e6e6;
+  --muted:#a3a3a3;
+  --on-ink:#000000;
+  --primary:#e91d2a;
+  --sticker:#fcc20f;
+  --purple:#6a26a4;
+  --link:#8fa2ff;
+  --tint-olive:#8e8a25; --tint-sage:#b3bd95; --tint-salmon:#d77a7a; --tint-peach:#e6915d;
+  --tint-lime:#c0d4a7; --tint-sky:#9ab6c8; --tint-steel:#a5b8c0; --tint-periwinkle:#8c9ae0;
+  --tint-lavender:#b9a3d6; --tint-mustard:#dcb44a; /* category colors = these 10 tints (admin SWATCHES) */
+  --on-tint:#000000;
+  --veil:rgba(20,20,20,.55);
+  --line:255,255,255;
+  --f-display:"Kig Display","Space Mono","Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+  --f-head:"Kig Head","Space Mono","Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+  --f-body:"Kig Body","Space Mono","Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+  --font:var(--f-body);
+  --sp-xxs:2px; --sp-xs:4px; --sp-s:6px; --sp-sm:8px; --sp-m:10px; --sp-md:12px; --sp-lg:16px; --sp-xl:20px; --sp-xxl:24px;
+  --sec-sm:32px; --sec:40px; --sec-lg:48px;
+  --fw:8px; --bh:56px;
+  color-scheme:dark;
+}
+html.light{
+  --chrome:#ffffff; --chrome-ink:#000000; --chrome-muted:#555555; --chrome-pill:#eeeeee; --chrome-line:rgba(0,0,0,.12);
+  --canvas:#ffffff;
+  --surface:#ffffff;
+  --surface-2:#eeeeee;
+  --ink:#000000;
+  --body:#000000;
+  --muted:#555555;
+  --on-ink:#ffffff;
+  --link:#0000ee;
+  --veil:rgba(255,255,255,.55);
+  --line:0,0,0;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;overflow:hidden}
+body{background:var(--chrome);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;word-break:keep-all;font-synthesis:none}
+button{font:inherit;color:inherit;background:none;border:none;padding:0;cursor:pointer}
+a{color:inherit}
+h1,h2,h3{margin:0;font-weight:400;text-wrap:balance}
+p{margin:0}
+:focus-visible{outline:2px solid var(--sticker);outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* ---------- labels: flat color only, square, no outline ---------- */
+.pill{text-decoration:none;display:inline-flex;align-items:center;gap:var(--sp-s);height:26px;padding:0 var(--sp-m);border-radius:0;font-family:var(--f-head);font-size:13px;font-weight:700;white-space:nowrap;
+  background:var(--c,var(--surface-2));color:var(--on,var(--ink));transition:opacity .2s,filter .2s}
+.pill.glass{background:var(--surface-2);color:var(--ink)}
+.pill.meta{background:transparent;color:var(--muted);font-family:var(--f-body);font-weight:400;font-size:12px;height:22px;padding:0 var(--sp-s) 0 0}
+.pill.dark{background:var(--ink);color:var(--on-ink)}
+.pill.primary{background:var(--ink);color:var(--on-ink);height:32px;padding:0 var(--sp-lg);text-transform:uppercase}
+.pill.round{width:30px;height:30px;padding:0;justify-content:center}
+.pill.lg{height:auto;min-height:40px;font-family:var(--f-display);font-size:22px;font-weight:700;line-height:1.05;padding:var(--sp-sm) var(--sp-lg);white-space:normal}
+.pill.xl{display:block;width:100%;height:auto;font-family:var(--f-display);font-size:36px;font-weight:700;line-height:1.05;padding:var(--sp-xxl) var(--sp-lg);white-space:normal}
+.pill.sticker{background:var(--sticker);color:#000;box-shadow:2px 2px 0 #000;transform:rotate(-3deg)}
+button.pill:hover{filter:brightness(1.08)}
+.pill svg{width:14px;height:14px;flex:none}
+.row{display:flex;flex-wrap:wrap;gap:var(--sp-xs);align-items:center}
+
+/* ---------- frame + banner ---------- */
+#frame{position:fixed;inset:0;border:var(--fw) solid var(--chrome);pointer-events:none;z-index:60}
+.banner{position:fixed;top:0;left:0;right:0;height:calc(var(--bh) + var(--fw));padding:var(--fw) calc(var(--fw) + var(--sp-lg)) 0;background:var(--chrome);color:var(--chrome-ink);box-shadow:0 1px 0 var(--chrome-line);display:flex;align-items:center;gap:var(--sp-lg);z-index:55}
+.brand{display:flex;align-items:baseline;gap:var(--sp-md);text-decoration:none;color:var(--chrome-ink);min-width:0}
+.brand b{font-family:var(--f-display);font-size:24px;font-weight:700;line-height:1;white-space:nowrap}
+.brand span{font-family:var(--f-head);font-size:12px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;color:var(--chrome-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.callout{font-family:var(--f-head);font-weight:700;font-size:14px;color:var(--primary);white-space:nowrap}
+.banner .spacer{flex:1}
+.banner .tools{display:flex;align-items:center;gap:var(--sp-xs)}
+.banner .tools .pill{background:var(--chrome-pill);color:var(--chrome-ink)}
+#search{width:0;opacity:0;padding:0;transition:width .2s,opacity .2s,padding .2s;border:none;outline:none;height:30px;border-radius:0;background:var(--chrome-pill);color:var(--chrome-ink);font:inherit;font-size:13px}
+#search.open{width:200px;opacity:1;padding:0 var(--sp-m)}
+#search::placeholder{color:var(--chrome-muted)}
+
+/* ---------- layers ---------- */
+.view{position:fixed;top:calc(var(--bh) + var(--fw));left:var(--fw);right:var(--fw);bottom:var(--fw);z-index:1;background:var(--canvas)}
+#graph-view{z-index:1}
+#graph-view .layer{position:absolute;inset:0;z-index:3}
+body:not(.v-graph) #graph-view{visibility:hidden}
+body:not(.v-gallery) #gallery-view{visibility:hidden}
+body.v-gallery .hud.bl{display:none}
+#graph-view{cursor:grab;touch-action:none}
+#graph-view:active{cursor:grabbing}
+#links{position:absolute;inset:0;width:100%;height:100%;z-index:3}
+#labels{position:absolute;inset:0;z-index:4}
+
+/* graph labels */
+.node{position:absolute;left:0;top:0;will-change:transform;user-select:none;touch-action:none;transition:opacity .25s,width .2s,height .2s,padding .2s,font-size .2s}
+/* tags: outline only (no fill), headline gothic */
+.node.tag{color:var(--ink);font-family:var(--f-display);font-weight:400;font-size:12px;height:22px;padding:0 var(--sp-s);border:1px solid var(--ink);border-radius:999px;transition:opacity .25s,width .2s,height .2s,padding .2s,font-size .2s,border-radius .25s}
+.node.tag::before{display:none}
+.node.cat{height:auto;font-family:var(--f-display);font-size:22px;line-height:1;padding:var(--sp-md) calc(var(--sp-lg) + 8px)}
+.node.post{font-family:var(--f-head);height:auto;line-height:1.3;padding:8px calc(var(--sp-m) + 8px + 16px)}
+.node.dim{opacity:.15}
+/* every node is a full pill. Resting: sharp text on a softly blurred pill fill · hover (or keyboard focus): the fill sharpens.
+   The fill lives in ::before so only the background blurs, never the text. */
+.node{background:transparent!important;isolation:isolate;border-radius:999px}
+.node::before{content:"";position:absolute;inset:0;z-index:-1;background:var(--c,var(--surface-2));border-radius:999px;filter:blur(10px);transition:filter .25s}
+.node:hover,.node.hover,.node:focus-visible{z-index:1}
+.node:hover::before,.node.hover::before,.node:focus-visible::before,.node.on::before{filter:none}
+#labels.far .node::before{filter:blur(2px)}
+/* selected (clicked) = same sharp pill as hover, no shadow */
+#labels.far .node:not(.on){font-size:0!important;width:12px;height:12px;padding:0;gap:0}
+#labels.far .node.tag:not(.on){width:6px;height:6px;border-color:rgba(var(--line),.5)}
+#labels.far .node.cat:not(.on){width:20px;height:20px}
+
+#tip{position:fixed;z-index:58;pointer-events:none;opacity:0;transition:opacity .12s;transform:translate(12px,14px)}
+#tip.show{opacity:1}
+#tip.img{transform:none;height:auto;padding:0;flex-direction:column;align-items:stretch;gap:0;background:var(--ink);box-shadow:3px 3px 0 var(--frame);max-width:260px}
+#tip.img img{display:block;width:260px;max-height:260px;object-fit:cover;background:var(--surface-2)}
+#tip.img span{padding:var(--sp-s) var(--sp-m);white-space:normal;line-height:1.3}
+
+/* ---------- HUD ---------- */
+.hud{position:fixed;z-index:20;display:flex;gap:var(--sp-xs);align-items:flex-start}
+.hud.bl{bottom:calc(var(--fw) + var(--sp-lg));left:calc(var(--fw) + var(--sp-lg));flex-direction:column-reverse;align-items:flex-start}
+.hud.br{bottom:calc(var(--fw) + var(--sp-lg));right:calc(var(--fw) + var(--sp-lg));align-items:flex-end}
+.hud .pill{background:var(--ink);color:var(--on-ink);text-transform:uppercase}
+.views{position:relative;display:flex;flex-direction:column;align-items:flex-end;gap:var(--sp-xs)}
+.views .menu{display:flex;flex-direction:column;align-items:flex-end;gap:var(--sp-xs)}
+.views .menu .pill{opacity:0;transform:translateY(12px);pointer-events:none;transition:opacity .15s,transform .2s;background:var(--surface-2);color:var(--ink)}
+.views.open .menu .pill{opacity:1;transform:none;pointer-events:auto}
+.views .menu .pill[aria-current="true"]{background:var(--sticker);color:#000}
+.zoomctl{display:flex;gap:var(--sp-xs);margin-right:var(--sp-sm)}
+body:not(.v-graph) .zoomctl{display:none}
+.legend{display:none;flex-direction:column;gap:var(--sp-sm);padding:var(--sp-md) var(--sp-lg);background:var(--surface);max-width:340px;font-size:13px;color:var(--body);box-shadow:3px 3px 0 var(--frame)}
+.legend.open{display:flex}
+.legend .hint{line-height:1.6}
+
+/* ---------- gallery view: square image tiles, image fills the tile by height ---------- */
+#gallery-view{overflow-x:hidden;overflow-y:auto}
+/* gallery = a free board: cards sit at scattered positions (no grid), may overlap, and can be dragged anywhere */
+.gallery{position:relative;min-height:100%}
+.tile{position:absolute;left:0;top:0;display:block;width:var(--ts,400px);aspect-ratio:1;overflow:hidden;background:var(--c,var(--surface-2));color:var(--on,var(--ink));text-align:left;cursor:grab;touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+/* height-based fill: image always spans the full tile height, centered; wider images crop at the sides */
+.tile.has-img{background:var(--surface-2)}
+.tile img{position:absolute;top:0;left:50%;height:100%;width:auto;max-width:none;transform:translateX(-50%);transition:transform .4s cubic-bezier(.2,.8,.2,1)}
+/* hover / pressed / dragging: the category color covers the whole card and only the title grows */
+.tile::after{content:"";position:absolute;inset:0;background:var(--c,var(--surface-2));opacity:0;transition:opacity .2s;pointer-events:none}
+.tile .cap,.tile .ttl,.tile .sub{z-index:1}
+.tile:hover::after,.tile:active::after,.tile.dragging::after,.tile.pressed::after,.tile:focus-visible::after{opacity:1}
+.tile:hover .cap,.tile:active .cap,.tile.dragging .cap,.tile.pressed .cap,.tile:focus-visible .cap{font-size:30px;line-height:1.15;padding:var(--sp-lg) var(--sp-xl)}
+.tile:hover .ttl,.tile:active .ttl,.tile.dragging .ttl,.tile.pressed .ttl,.tile:focus-visible .ttl{font-size:42px}
+.tile.dragging{cursor:grabbing}
+body.g-dragging,body.g-dragging .tile{cursor:grabbing}
+.tile .cap{position:absolute;left:0;bottom:0;max-width:100%;height:auto;min-height:30px;padding:var(--sp-xs) var(--sp-m);white-space:normal;line-height:1.3;font-size:14px;transition:font-size .2s,padding .2s,line-height .2s}
+.tile .ttl{position:absolute;inset:0;padding:var(--sp-xl) var(--sp-lg);font-family:var(--f-display);font-size:30px;font-weight:700;line-height:1.1;overflow:hidden;transition:font-size .2s}
+.tile .sub{position:absolute;left:var(--sp-lg);bottom:var(--sp-lg);font-family:var(--f-head);font-size:13px;font-weight:700;opacity:.75}
+.tile.on{box-shadow:inset 0 0 0 var(--fw) var(--sticker)}
+.tile:focus-visible{outline-offset:-4px}
+.empty-list{color:var(--muted);text-align:center;padding-top:30vh}
+#graph-empty{position:absolute;inset:0;margin:0;z-index:5;pointer-events:none}
+
+/* ---------- local graph overlay ---------- */
+#local{position:fixed;top:calc(var(--bh) + var(--fw));left:var(--fw);right:var(--fw);bottom:var(--fw);z-index:25;background:var(--veil);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);display:none}
+#local.open{display:block;animation:fade .2s ease-out}
+#local svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#local line{stroke:rgba(var(--line),.8);stroke-width:1;opacity:0;transition:opacity .3s .2s}
+#local.ready line{opacity:1}
+#local .lnode{position:absolute;left:0;top:0;transition:transform .5s cubic-bezier(.2,.8,.2,1),opacity .3s;opacity:0}
+#local.ready .lnode{opacity:1}
+#local .lfoot{position:absolute;bottom:var(--sp-lg);left:50%;transform:translateX(-50%);display:flex;gap:var(--sp-xs)}
+#local .lfoot .pill{background:var(--ink);color:var(--on-ink);text-transform:uppercase}
+@keyframes fade{from{opacity:0}}
+
+/* ---------- reader ---------- */
+#reader{position:fixed;top:calc(var(--bh) + var(--fw));right:var(--fw);bottom:var(--fw);width:min(600px,calc(100% - 2 * var(--fw)));z-index:26;background:var(--surface);border-left:var(--fw) solid var(--chrome);box-shadow:-1px 0 0 var(--chrome-line);transform:translateX(110%);transition:transform .3s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column}
+#reader.open{transform:none}
+.reader-top{display:flex;justify-content:flex-end;gap:var(--sp-xs);padding:var(--sp-md) var(--sp-lg) 0}
+.reader-top .pill{background:var(--ink);color:var(--on-ink);text-transform:uppercase}
+.reader-body{flex:1;overflow-y:auto;padding:var(--sp-md) var(--sp-xxl) 80px;display:flex;flex-direction:column;gap:var(--sp-sm)}
+.reader-body .en{color:var(--muted);font-size:13px;margin:var(--sp-xs) 0}
+.prose{margin-top:var(--sp-xl);font-size:16px;line-height:1.8;max-width:60ch;color:var(--body)}
+.prose>*+*{margin-top:1em}
+.prose h2,.prose h3,.prose h4,.prose h5,.prose h6{font-family:var(--f-head);font-weight:700;font-size:16px;line-height:1.35;color:var(--ink);margin-top:1.8em;padding:var(--sp-s) var(--sp-md);background:var(--surface-2);display:inline-block}
+.prose h2{font-size:19px}
+.prose h5,.prose h6{font-size:14px}
+.prose blockquote{margin:1.4em 0;padding:var(--sp-md) var(--sp-lg);background:var(--tint-sage);color:#000}
+.prose blockquote>*+*{margin-top:.8em}
+.prose blockquote blockquote{margin:.8em 0 0;background:rgba(0,0,0,.08)}
+.prose blockquote a,.prose blockquote strong{color:#000}
+.prose ul,.prose ol{padding-left:1.4em;margin-bottom:0}
+.prose li+li,.prose li>ul,.prose li>ol{margin-top:.3em}
+.prose li>p+p{margin-top:.6em}
+.prose li::marker{font-family:"Space Mono",var(--f-body);color:var(--muted)}
+.prose li.task{list-style:none;margin-left:-1.4em}
+.prose li.task input{accent-color:var(--sticker);margin:0 .3em 0 0;vertical-align:-1px}
+.prose strong{font-family:var(--f-head);color:var(--ink)}
+.prose em{font-synthesis:style}
+.prose del{color:var(--muted)}
+.prose code{font-family:"Space Mono",var(--f-body);font-size:.86em;background:var(--surface-2);padding:1px 5px}
+.prose pre{margin-left:0;margin-right:0;margin-bottom:0;padding:var(--sp-md) var(--sp-lg);background:var(--surface-2);overflow-x:auto;line-height:1.6}
+.prose pre code{background:none;padding:0;font-size:13px;white-space:pre}
+.prose hr{border:0;height:var(--fw);background:var(--ink);margin:2em 0}
+.prose img{display:block;max-width:100%;height:auto}
+.prose .table{overflow-x:auto}
+.prose table{border-collapse:collapse;font-size:14px;line-height:1.5;min-width:50%}
+.prose th,.prose td{padding:var(--sp-s) var(--sp-md);border-bottom:1px solid rgba(var(--line),.2);text-align:left;vertical-align:top}
+.prose th{font-family:var(--f-head);font-weight:700;color:var(--ink);background:var(--surface-2)}
+.prose a{color:var(--link);text-decoration:underline}
+.linked{margin-top:var(--sec);display:flex;flex-direction:column;gap:var(--sp-sm)}
+.linked h3{font-family:var(--f-head);font-size:13px;font-weight:700;color:var(--ink);text-transform:uppercase}
+
+/* ---------- info ---------- */
+#info{position:fixed;top:calc(var(--bh) + var(--fw));left:var(--fw);right:var(--fw);bottom:var(--fw);z-index:28;display:none;place-items:center;background:var(--veil);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+#info.open{display:grid;animation:fade .15s}
+.info-card{width:min(540px,calc(100% - 32px));max-height:calc(100% - 32px);overflow:auto;background:var(--surface);display:flex;flex-direction:column;gap:var(--sp-md);font-size:15px;line-height:1.7;color:var(--body);box-shadow:4px 4px 0 var(--frame);padding:0 0 var(--sp-xxl)}
+.info-card h2{font-family:var(--f-display);font-size:36px;line-height:1.05;color:#000;background:var(--tint-periwinkle);padding:var(--sp-xxl) var(--sp-lg)}
+.info-card > :not(h2){margin:0 var(--sp-xxl)}
+.info-card b{font-family:var(--f-head);color:var(--ink)}
+.drop{position:fixed;inset:0;z-index:57;display:none;place-items:center;background:var(--veil);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.drop.show{display:grid}
+
+#toast{position:fixed;left:50%;bottom:72px;transform:translateX(-50%);z-index:58;opacity:0;transition:opacity .2s;pointer-events:none}
+#toast.show{opacity:1}
+
+@media (max-width:768px){
+  html{--fw:4px;--bh:52px}
+  .brand span,.callout{display:none}
+  .tile .ttl{font-size:24px}
+  .tile:hover .ttl,.tile:active .ttl,.tile.dragging .ttl,.tile.pressed .ttl{font-size:32px}
+  .tile:hover .cap,.tile:active .cap,.tile.dragging .cap,.tile.pressed .cap{font-size:24px}
+  .reader-body{padding:var(--sp-md) var(--sp-lg) 80px}
+  #search.open{width:130px}
+  .pill.xl{font-size:28px}
+}
+@media (max-width:480px){html{--fw:2px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body class="v-graph">
+
+<section class="view" id="graph-view" aria-label="글 연결 그래프">
+  <canvas id="links"></canvas>
+  <div id="labels"></div>
+  <p class="empty-list" id="graph-empty" hidden>아직 발행된 글이 없어요.</p>
+</section>
+<section class="view" id="gallery-view" aria-label="글 갤러리"><div class="gallery" id="gallery"></div></section>
+
+<div id="frame" aria-hidden="true"></div>
+<header class="banner">
+  <a class="brand" href="#graph" data-action="home"><b>부드러운 리좀</b><span>FLUFFY RHIZOME - 흐르듯 연결되는 생각의 궤적</span></a>
+  <div class="row" id="stats"></div>
+  <span class="spacer"></span>
+  <div class="tools">
+    <label class="sr" for="search">글 검색</label>
+    <input id="search" placeholder="검색" autocomplete="off">
+    <button class="pill round" data-action="search" aria-label="검색 열기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
+    <button class="pill round" data-action="theme" aria-label="라이트 모드로 바꾸기"></button>
+    <button class="pill round" data-action="info" aria-label="웹진 소개와 데이터">i</button>
+  </div>
+</header>
+<div class="hud bl">
+  <button class="pill glass" data-action="legend" aria-expanded="false"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="7" r="2"/><circle cx="8" cy="17" r="2.5"/><circle cx="17" cy="17" r="3"/></svg>Legend</button>
+  <div class="legend" id="legend"></div>
+</div>
+<div class="hud br">
+  <div class="zoomctl">
+    <button class="pill round glass" data-action="zoom-out" aria-label="축소">−</button>
+    <button class="pill round glass" data-action="zoom-in" aria-label="확대">+</button>
+    <button class="pill glass" data-action="reheat" title="노드 고정을 풀고 다시 배치">재배치</button>
+  </div>
+  <div class="views" id="views">
+    <div class="menu" id="views-menu">
+      <a class="pill glass" href="#gallery" data-view="gallery">Gallery</a>
+      <a class="pill glass" href="#graph" data-view="graph">Graph</a>
+    </div>
+    <button class="pill glass" data-action="views" aria-expanded="false" aria-controls="views-menu"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="6" cy="18" r="2.6"/><circle cx="12" cy="7" r="2.6"/><circle cx="18" cy="16" r="2.6"/><path d="M6 18 12 7l6 9" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>Views</button>
+  </div>
+</div>
+
+<div id="tip" class="pill dark"></div>
+<div id="local" role="dialog" aria-modal="true" aria-label="글 연결 보기"></div>
+<aside id="reader" aria-label="글 읽기"></aside>
+<div id="info" role="dialog" aria-modal="true" aria-labelledby="info-title"></div>
+<div id="toast" class="pill dark" role="status" aria-live="polite"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script>
+(() => {
+"use strict";
+
+/* ===================== 예시 데이터 (어드민 JSON 내보내기와 같은 형식) ===================== */
+const SAMPLE = {
+  meta:{ title:"리좀 웹진", sample:true },
+  categories:[
+    { id:"research", name:"리서치 노트", nameEn:"Research Notes", color:"#8c9ae0" },
+    { id:"essay", name:"에세이", nameEn:"Essays", color:"#d77a7a" },
+    { id:"review", name:"리뷰", nameEn:"Reviews", color:"#b3bd95" },
+    { id:"fragment", name:"단상", nameEn:"Fragments", color:"#e6915d" }
+  ],
+  nodes:[
+    { id:"p01", title:"SBAU 2021 웹사이트 인터랙션 분석", titleEn:"SBAU 2021 Website Interaction Study", category:"research", tags:["레퍼런스","3D 그래프","인터랙션"], date:"2026-11-18", weight:7,
+      summary:"전시 프로젝트를 3D 공간의 점으로 놓은 비엔날레 사이트를 코드 수준에서 뜯어본 노트.",
+      body:"서울도시건축비엔날레 2021 사이트는 전시 프로젝트 하나하나를 3D 공간의 점으로 놓는다. 평소에는 하나의 구로 모여 천천히 돌고, '군중 모드'로 바꾸면 전시별 무리로 흩어진다.\n\n## 눈여겨본 것\n- 데이터는 CSV 한 장이다. path를 /로 쪼개 부모와 자식을 잇는다.\n- 노드에 마우스를 올리면 회전이 느려진다. 무언가를 보려 할 때 세계가 살짝 멈칫한다.\n- 점을 누르면 카메라가 2초 동안 날아가고, 글은 오른쪽 패널에서 열린다. 주소만 바뀌고 페이지는 그대로다.\n\n> 구와 군중, 두 가지 보기 사이를 오가는 전환이 이 사이트의 전부라고 해도 좋다." },
+    { id:"p02", title:"Biblio-Graph를 읽는 법", titleEn:"Reading Biblio-Graph", category:"research", tags:["레퍼런스","아카이브","인터랙션"], date:"2026-11-18", weight:6,
+      summary:"책, 저자, 출판사, 연도가 같은 층위의 라벨로 이어지는 도서 그래프.",
+      body:"Biblio-Graph는 미술 기관의 도서 컬렉션을 그래프로 보여준다. 책, 저자, 출판사, 연도가 모두 같은 층위의 라벨이다.\n\n점을 누르면 색이 칠해진 라벨로 펼쳐지고, 여러 개를 누르면 누른 것들 사이의 선만 밝아진다. 탐색이 곧 경로가 된다.\n\n## 가져올 것\n- 테두리 없이 색만 있는 라벨\n- 흐린 배경 위에 또렷한 글자\n- 선 위에 관계의 이름을 적는 방식" },
+    { id:"p03", title:"땅속줄기에 대하여", titleEn:"On Rhizomes", category:"essay", tags:["리좀","위계","연결"], date:"2026-03-02", weight:9,
+      summary:"뿌리에서 가지로 자라는 나무와 아무 마디에서나 뻗는 땅속줄기.",
+      body:"나무는 뿌리에서 줄기로, 줄기에서 가지로 자란다. 어디서 시작했는지가 분명하다. 땅속줄기는 다르다. 아무 마디에서나 새 줄기가 나고, 끊어져도 다른 곳에서 다시 이어진다.\n\n글을 모으는 방식도 이럴 수 있을까. 목차의 1장, 2장 대신, 한 글의 한 문장이 다른 글의 한 문장으로 옆으로 뻗어 가는 방식.\n\n이 웹진은 그 질문에서 시작했다." },
+    { id:"p04", title:"목차 없는 책", titleEn:"A Book Without Contents", category:"essay", tags:["리좀","책","읽기"], date:"2026-04-11", weight:5,
+      summary:"펼친 곳에서 시작하고, 건너뛰고, 다시 돌아오는 책.",
+      body:"어떤 책은 첫 장부터 읽지 않아도 된다. 펼친 곳에서 시작하고, 다른 곳으로 건너뛰고, 다시 돌아온다.\n\n목차가 없다는 건 길을 잃게 한다는 뜻이 아니다. 길이 여러 개라는 뜻이다." },
+    { id:"p05", title:"연결선의 두께", titleEn:"The Weight of a Line", category:"fragment", tags:["인터랙션","선","디자인"], date:"2026-05-20", weight:4,
+      summary:"선의 두께는 주의의 두께다.",
+      body:"선은 얇을수록 많은 것을 견딘다. 수백 개의 연결이 겹쳐도 화면이 무너지지 않으려면, 평소의 선은 거의 보이지 않아야 한다.\n\n그러다 누군가 점 하나를 누르면, 그 점에서 나가는 선만 굵어진다. 선의 두께는 주의의 두께다." },
+    { id:"p06", title:"밤의 을지로를 걷다", titleEn:"Walking Euljiro at Night", category:"essay", tags:["도시","걷기","기억"], date:"2026-06-14", weight:7,
+      summary:"지도 앱의 파란 점을 끄고 걸은 밤.",
+      body:"을지로의 밤은 소리로 기억된다. 셔터 내리는 소리, 지게차 후진 경고음, 골목 끝에서 들리는 라디오.\n\n지도 앱의 파란 점을 끄고 걸었다. 같은 골목을 세 번 지났다는 걸 나중에야 알았다." },
+    { id:"p07", title:"천 개의 고원, 다시", titleEn:"A Thousand Plateaus, Again", category:"review", tags:["리좀","들뢰즈","책"], date:"2026-02-08", weight:6,
+      summary:"아무 고원에서나 시작하라는 책을 다시 읽으며.",
+      body:"들뢰즈와 가타리의 『천 개의 고원』은 순서대로 읽으라고 쓰인 책이 아니다. 저자들도 서문에서 아무 고원에서나 시작하라고 말한다.\n\n다시 읽으며 밑줄 친 개념은 '연결과 이질성의 원리'다. 리좀의 어떤 점이든 다른 어떤 점과 연결될 수 있다는 것." },
+    { id:"p08", title:"아카이브는 지도가 아니다", titleEn:"An Archive Is Not a Map", category:"essay", tags:["아카이브","기억","지도"], date:"2026-07-30", weight:8,
+      summary:"같은 상자를 열어도 두 사람이 꺼내는 것은 다르다.",
+      body:"지도는 어디로 가야 하는지를 알려준다. 아카이브는 어디에 무엇이 있었는지를 알려줄 뿐이다.\n\n그래서 아카이브를 걷는 사람은 매번 자기만의 지도를 그린다. 같은 상자를 열어도 두 사람이 꺼내는 것은 다르다." },
+    { id:"p09", title:"각주에서 시작하기", titleEn:"Starting from the Footnote", category:"fragment", tags:["읽기","책","각주"], date:"2026-08-03", weight:3,
+      summary:"각주는 글의 뿌리가 아니라 옆으로 뻗은 줄기다.",
+      body:"논문을 읽을 때 본문보다 각주를 먼저 본다. 저자가 어디서 왔는지, 누구와 이야기하고 있는지가 거기 있다.\n\n각주는 글의 뿌리가 아니라 옆으로 뻗은 줄기다." },
+    { id:"p10", title:"세운상가 옥상에서", titleEn:"On the Roof of Sewoon", category:"fragment", tags:["도시","건축","기억"], date:"2026-09-09", weight:4,
+      summary:"가장 오래된 것과 가장 높은 것 사이.",
+      body:"세운상가 옥상에서는 종묘 숲과 남산 타워가 한눈에 들어온다. 서울에서 가장 오래된 것과 가장 높은 것 사이에 서 있는 셈이다.\n\n발밑에서는 여전히 납땜 냄새가 올라온다." },
+    { id:"p11", title:"도시를 기록하는 다섯 가지 방법", titleEn:"Five Ways to Record a City", category:"research", tags:["도시","지도","걷기"], date:"2026-10-01", weight:6,
+      summary:"걷기, 소리, 계절 사진, 간판, 사라진 것의 목록.",
+      body:"도시를 기록하는 방법을 다섯 가지로 나눠 정리했다.\n\n- 걷기와 메모\n- 소리 녹음\n- 같은 장소를 계절마다 사진 찍기\n- 간판과 글자 수집\n- 사라진 것의 목록 만들기\n\n다섯 번째가 가장 어렵다. 없어진 것은 없어진 뒤에야 보인다." },
+    { id:"p12", title:"잊는 것도 기록이다", titleEn:"Forgetting Is Also a Record", category:"fragment", tags:["기억","아카이브"], date:"2026-10-27", weight:4,
+      summary:"기록하지 않기로 한 날들의 빈칸.",
+      body:"기록하지 않기로 한 날들도 있다. 그 빈칸도 아카이브의 일부다.\n\n잊는 것은 지우는 것과 다르다. 잊힌 것은 어딘가에서 다시 이어질 수 있다." }
+  ],
+  links:[
+    {source:"p01",target:"p02"},{source:"p01",target:"p05"},{source:"p02",target:"p08"},{source:"p03",target:"p04"},
+    {source:"p03",target:"p07"},{source:"p03",target:"p08"},{source:"p04",target:"p09"},{source:"p06",target:"p10"},
+    {source:"p06",target:"p11"},{source:"p10",target:"p11"},{source:"p08",target:"p12"},{source:"p07",target:"p04"}
+  ]
+};
+
+/* ===================== helpers ===================== */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const hash = s => { let h = 2166136261; for (const c of String(s)) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
+const fmtDate = d => d ? String(d).replace(/-/g, ".") : "";
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const NEUTRAL = "#a5b8c0";
+const theme = { line:"255,250,240", ink:"#fffaf0", onInk:"#0a0a0a" };
+function readTheme() { const cs = getComputedStyle(document.documentElement); theme.line = cs.getPropertyValue("--line").trim(); theme.ink = cs.getPropertyValue("--ink").trim(); theme.onInk = cs.getPropertyValue("--on-ink").trim(); }
+function setTheme(light, save) {
+  document.documentElement.classList.toggle("light", light);
+  const b = document.querySelector("[data-action=theme]");
+  if (b) { b.innerHTML = light ? MOON : SUN; b.setAttribute("aria-label", light ? "다크 모드로 바꾸기" : "라이트 모드로 바꾸기"); }
+  if (save) { try { localStorage.setItem("rhizome-theme", light ? "light" : "dark"); } catch {} }
+  readTheme(); if (typeof schedule === "function") schedule();
+}
+const SUN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
+const MOON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>';
+// Clay brand palette: any category color snaps to the nearest brand fill; text flips to white on the dark fills
+const CLAY = { "#8e8a25":"olive", "#b3bd95":"sage", "#d77a7a":"salmon", "#e6915d":"peach", "#c0d4a7":"lime", "#9ab6c8":"sky", "#a5b8c0":"steel", "#8c9ae0":"periwinkle", "#b9a3d6":"lavender", "#dcb44a":"mustard" };
+const rgb = h => { const m = String(h || "").replace("#", "").match(/^([0-9a-f]{6}|[0-9a-f]{3})$/i); if (!m) return null; let x = m[1]; if (x.length === 3) x = [...x].map(c => c + c).join(""); return [0, 2, 4].map(i => parseInt(x.slice(i, i + 2), 16)); };
+function clay(h) {
+  const v = rgb(h); if (!v) return NEUTRAL;
+  let best = NEUTRAL, bd = Infinity;
+  for (const k of Object.keys(CLAY)) { const c = rgb(k); const d = (c[0]-v[0])**2*0.3 + (c[1]-v[1])**2*0.59 + (c[2]-v[2])**2*0.11; if (d < bd) { bd = d; best = k; } }
+  return best;
+}
+const sty = h => `--c:var(--tint-${CLAY[clay(h)]});--on:var(--on-tint)`;
+
+/* ===================== data: 어드민에서 발행한 글을 공개 API로 읽어 옴 ===================== */
+// 웹진이 어드민과 같은 도메인에 올라가면 상대 경로, 아니면 어드민 주소로 직접 요청 (CORS 허용됨)
+const API = /(^|\.)rhizome-webzine\.vercel\.app$/.test(location.hostname) ? "/api/rhizome" : "https://rhizome-webzine.vercel.app/api/rhizome";
+const CACHE_KEY = "rhizome-webzine-live";
+// src: "live" 방금 받아 온 글 · "cache" 서버에 못 닿아 이 브라우저에 남은 마지막 글 · "sample" 서버에 못 닿고 저장된 글도 없어 예시
+// 서버에 닿았는데 발행된 글이 0편이면 예시 대신 빈 화면을 보여줌
+let DATA = SAMPLE, src = "sample";
+try { localStorage.removeItem("rhizome-webzine-data"); } catch {} // 예전 JSON 불러오기로 남은 데이터 정리
+function valid(j) { return j && Array.isArray(j.nodes) && j.nodes.some(n => n && n.title); }
+async function fetchLive() {
+  const r = await fetch(API, { cache: "no-store" });
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  const j = await r.json();
+  if (!j || !Array.isArray(j.nodes)) throw new Error("bad data");
+  return j;
+}
+// 화면에 보이는 내용의 지문 — 초안만 고쳐 updatedAt이 바뀐 경우엔 다시 그리지 않도록 meta는 뺌
+const isFeed = j => j && Array.isArray(j.nodes);
+const sig = j => valid(j) ? JSON.stringify([j.categories, j.nodes, j.links]) : isFeed(j) ? "empty" : "sample";
+let shown = "sample";
+function useData(j, from) {
+  if (valid(j)) { DATA = j; src = from; }
+  else if (isFeed(j)) { DATA = { meta: j.meta || {}, categories: [], nodes: [], links: [] }; src = from; }
+  else { DATA = SAMPLE; src = "sample"; }
+  shown = sig(j);
+}
+async function loadLive() {
+  try {
+    const j = await fetchLive();
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify(j)); } catch {}
+    useData(j, "live");
+  } catch {
+    let cached = null; try { cached = JSON.parse(localStorage.getItem(CACHE_KEY) || "null"); } catch {}
+    useData(cached, "cache");
+    if (src === "sample") toast("글을 불러오지 못해 예시를 보여줘요");
+  }
+}
+// 탭으로 돌아오면 새 글이 있는지 확인하고, 바뀌었을 때만 다시 그림
+async function refresh(manual) {
+  try {
+    const j = await fetchLive();
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify(j)); } catch {}
+    const changed = sig(j) !== shown;
+    if (changed) { useData(j, "live"); closeReader(); closeLocal(); boot(); }
+    else if (src === "cache") { src = "live"; renderHud(); }
+    if (manual) { closeInfo(); toast(changed ? `글 ${G.posts.length}편을 새로 불러왔어요` : "이미 최신이에요"); }
+  } catch { if (manual) toast("서버에 연결하지 못했어요"); }
+}
+
+let G = null;
+function buildGraph(data) {
+  const cats = new Map((data.categories || []).map(c => [c.id, c]));
+  const nodes = [], links = [], byId = new Map();
+  const add = n => { byId.set(n.id, n); nodes.push(n); return n; };
+  const posts = (data.nodes || []).filter(p => p && p.title);
+  const used = new Set(posts.map(p => p.category));
+  cats.forEach(c => { if (used.has(c.id)) add({ id:"c:" + c.id, type:"cat", label:c.name, color:c.color || NEUTRAL, cat:c }); });
+  posts.forEach(p => { const c = cats.get(p.category); add({ id:"p:" + p.id, type:"post", label:p.title, color:c ? c.color : NEUTRAL, post:p, weight:Number(p.weight) || 5 }); });
+  const tagN = new Map();
+  posts.forEach(p => (p.tags || []).forEach(t => tagN.set(t, (tagN.get(t) || 0) + 1)));
+  tagN.forEach((n, t) => add({ id:"t:" + t, type:"tag", label:t, count:n }));
+  const seen = new Set();
+  const link = (a, b, rel, kind) => {
+    if (a === b || !byId.has(a) || !byId.has(b)) return;
+    const k = [a, b].sort().join("|"); if (seen.has(k)) return; seen.add(k);
+    links.push({ source:a, target:b, sid:a, tid:b, rel, kind });
+  };
+  posts.forEach(p => {
+    if (cats.has(p.category)) link("p:" + p.id, "c:" + p.category, "카테고리", "cat");
+    (p.tags || []).forEach(t => link("p:" + p.id, "t:" + t, "태그", "tag"));
+  });
+  const tagsOf = id => (byId.get("p:" + id)?.post.tags) || [];
+  (data.links || []).forEach(l => {
+    const shared = tagsOf(l.source).filter(t => tagsOf(l.target).includes(t));
+    link("p:" + l.source, "p:" + l.target, shared.length ? "#" + shared[0] : "연결", "post");
+  });
+  const nbr = new Map(nodes.map(n => [n.id, new Set()]));
+  links.forEach(l => { nbr.get(l.sid).add(l.tid); nbr.get(l.tid).add(l.sid); });
+  return { nodes, links, byId, nbr, posts, cats:[...cats.values()].filter(c => used.has(c.id)) };
+}
+const postNode = id => G.byId.get("p:" + id);
+const linkedPosts = id => [...G.nbr.get("p:" + id) || []].filter(x => x.startsWith("p:")).map(x => G.byId.get(x).post);
+
+/* ===================== state ===================== */
+const st = { view: viewFromHash(), hover:null, active:null, clicked:new Set(), q:"", readerId:null, localId:null };
+function viewFromHash() { return location.hash === "#gallery" || location.hash === "#list" ? "gallery" : "graph"; }
+
+/* ===================== graph view ===================== */
+const gv = $("#graph-view"), canvas = $("#links"), ctx = canvas.getContext("2d"), labelsEl = $("#labels");
+let sim = null, zoom = null, T = d3.zoomIdentity, W = 0, H = 0, raf = 0, dragS = null;
+
+function sizeCanvas() {
+  const r = gv.getBoundingClientRect(); W = r.width; H = r.height;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+function schedule() { if (!raf) raf = requestAnimationFrame(() => { raf = 0; render(); }); }
+
+function initGraph() {
+  if (sim) sim.stop();
+  labelsEl.innerHTML = "";
+  st.hover = st.active = null; st.clicked.clear();
+  sizeCanvas();
+  // labels
+  G.nodes.forEach(n => {
+    const el = document.createElement("button");
+    el.type = "button";
+    el.className = "pill node " + n.type;
+    el.setAttribute("style", sty(n.color || NEUTRAL));
+    if (n.type === "post") el.style.fontSize = (12 + n.weight * 0.32).toFixed(1) + "px";
+    el.textContent = n.type === "tag" ? "#" + n.label : n.label;
+    el.dataset.id = n.id;
+    el.setAttribute("aria-label", (n.type === "post" ? "글 " : n.type === "tag" ? "태그 " : "카테고리 ") + n.label);
+    n.el = el; labelsEl.appendChild(el);
+  });
+  G.nodes.forEach(n => { n.w = n.el.offsetWidth; n.h = n.el.offsetHeight; n.r = Math.max(n.w * 0.42, n.h * 0.7) + 4; });
+  // seed positions: categories on a ring, posts near their category
+  const cats = G.nodes.filter(n => n.type === "cat");
+  cats.forEach((c, i) => { const a = i / Math.max(cats.length, 1) * Math.PI * 2 - Math.PI / 2; c.x = Math.cos(a) * 320; c.y = Math.sin(a) * 240; });
+  G.nodes.forEach(n => {
+    if (n.type === "cat") return;
+    const c = n.post && G.byId.get("c:" + n.post.category);
+    const j = hash(n.id);
+    n.x = (c ? c.x * 0.7 : 0) + ((j % 200) - 100);
+    n.y = (c ? c.y * 0.7 : 0) + (((j >> 8) % 200) - 100);
+  });
+  if (!zoom) {
+    zoom = d3.zoom().scaleExtent([0.25, 3])
+      .filter(e => e.type === "wheel" ? false : (!e.target.closest(".node") && !e.button)) // wheel is handled below
+      .on("zoom", e => { T = e.transform; schedule(); });
+    d3.select(gv).call(zoom).on("dblclick.zoom", null);
+    bindWheel();
+  }
+  d3.select(gv).call(zoom.transform, d3.zoomIdentity.translate(W / 2, H / 2).scale(W < 640 ? 0.55 : 0.8));
+  sim = d3.forceSimulation(G.nodes)
+    .force("link", d3.forceLink(G.links).id(d => d.id).distance(l => l.kind === "post" ? 190 : l.kind === "cat" ? 230 : 130).strength(l => l.kind === "cat" ? 0.18 : l.kind === "post" ? 0.45 : 0.5))
+    .force("charge", d3.forceManyBody().strength(n => n.type === "cat" ? -1400 : n.type === "post" ? -700 : -260))
+    .force("rect", rectCollide(10))
+    .force("x", d3.forceX(0).strength(0.02))
+    .force("y", d3.forceY(0).strength(0.035))
+    .on("tick", schedule)
+    .stop();
+  sim.tick(320);
+  sim.alpha(0.25).restart();
+  setTimeout(() => fit(900), reduce ? 0 : 500);
+  applyFocus();
+}
+
+/* wheel / trackpad:
+   - trackpad two-finger swipe  → pan (any direction)
+   - trackpad pinch (ctrl+wheel; Safari gesture events) → zoom at the fingers
+   - mouse wheel → zoom at the pointer (as before)
+   Trackpad vs mouse: Chrome/Safari report wheelDeltaY = -3 × deltaY for trackpads (mouse wheels step by 120);
+   Firefox reports trackpads in pixels (deltaMode 0) and mouse wheels in lines. */
+function bindWheel() {
+  const sel = d3.select(gv);
+  const at = e => { const r = gv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  const isTrackpad = e => e.deltaX !== 0 || (e.wheelDeltaY ? e.wheelDeltaY === -3 * e.deltaY : e.deltaMode === 0 && Math.abs(e.deltaY) < 50);
+  gv.addEventListener("wheel", e => {
+    e.preventDefault();
+    const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? H : 1;
+    const dx = e.deltaX * unit, dy = e.deltaY * unit;
+    if (e.ctrlKey) sel.call(zoom.scaleBy, Math.pow(2, -dy * 0.01), at(e));            // pinch
+    else if (isTrackpad(e)) sel.call(zoom.translateBy, -dx / T.k, -dy / T.k);       // two-finger pan
+    else sel.call(zoom.scaleBy, Math.pow(2, -dy * 0.002), at(e));                     // mouse wheel
+    hideTip();
+  }, { passive: false });
+  // Safari (macOS) sends pinch as gesture events instead of ctrl+wheel
+  let k0 = 1;
+  gv.addEventListener("gesturestart", e => { e.preventDefault(); k0 = T.k; });
+  gv.addEventListener("gesturechange", e => { e.preventDefault(); sel.call(zoom.scaleTo, k0 * e.scale, at(e)); });
+  gv.addEventListener("gestureend", e => e.preventDefault());
+}
+
+// rectangle collision so wide text labels never overlap (labels are measured in screen px)
+function rectCollide(pad) {
+  let nodes = [], maxW = 0, maxH = 0;
+  function force() {
+    const q = d3.quadtree(nodes, d => d.x, d => d.y);
+    const sc = 1 / Math.max(T.k, 0.45);
+    maxW = (d3.max(nodes, d => d.w) || 0) / 2 * sc + pad; maxH = (d3.max(nodes, d => d.h) || 0) / 2 * sc + pad;
+    for (const a of nodes) {
+      const aw = a.w / 2 * sc + pad, ah = a.h / 2 * sc + pad;
+      q.visit((quad, x0, y0, x1, y1) => {
+        const b = quad.data;
+        if (b && b !== a && b.index > a.index) {
+          const bw = b.w / 2 * sc + pad, bh = b.h / 2 * sc + pad;
+          const dx = a.x - b.x || (Math.random() - .5), dy = a.y - b.y || (Math.random() - .5);
+          const ox = aw + bw - Math.abs(dx), oy = ah + bh - Math.abs(dy);
+          if (ox > 0 && oy > 0) {
+            if (ox < oy * 2.2) { const m = ox * 0.5 * Math.sign(dx); a.x += m; b.x -= m; }
+            else { const m = oy * 0.5 * Math.sign(dy); a.y += m; b.y -= m; }
+          }
+        }
+        return x0 > a.x + aw + maxW || x1 < a.x - aw - maxW || y0 > a.y + ah + maxH || y1 < a.y - ah - maxH;
+      });
+    }
+  }
+  force.initialize = n => { nodes = n; };
+  return force;
+}
+
+function fit(ms = 700) {
+  if (!G.nodes.length) return;
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  G.nodes.forEach(n => { x0 = Math.min(x0, n.x - n.w / 2); x1 = Math.max(x1, n.x + n.w / 2); y0 = Math.min(y0, n.y - n.h); y1 = Math.max(y1, n.y + n.h); });
+  const pad = W < 640 ? 40 : 120;
+  const k = Math.max(0.3, Math.min(1.3, Math.min((W - pad) / (x1 - x0), (H - pad * 1.2) / (y1 - y0))));
+  const t = d3.zoomIdentity.translate(W / 2, H / 2).scale(k).translate(-(x0 + x1) / 2, -(y0 + y1) / 2);
+  d3.select(gv).transition().duration(reduce ? 0 : ms).call(zoom.transform, t);
+}
+function centerOn(n) {
+  const k = Math.max(T.k, 1);
+  const shift = st.readerId && W > 900 ? 280 : 0;
+  const t = d3.zoomIdentity.translate(W / 2 - shift, H / 2).scale(k).translate(-n.x, -n.y);
+  d3.select(gv).transition().duration(reduce ? 0 : 1000).call(zoom.transform, t);
+}
+
+const focusNode = () => st.hover || st.active;
+function activeLink(l) {
+  const f = focusNode();
+  return (f && (l.source === f || l.target === f)) || (st.clicked.has(l.source.id) && st.clicked.has(l.target.id));
+}
+function matches(n, q) {
+  if (!q) return true;
+  const hay = [n.label, n.post && n.post.titleEn, n.post && n.post.summary, n.post && n.post.body, n.post && (n.post.tags || []).join(" ")].join(" ").toLowerCase();
+  return hay.includes(q);
+}
+function applyFocus() {
+  const f = focusNode(), q = st.q.trim().toLowerCase();
+  const rel = new Set(st.clicked);
+  if (f) { rel.add(f.id); G.nbr.get(f.id).forEach(x => rel.add(x)); }
+  const focusing = !!(f || st.clicked.size);
+  G.nodes.forEach(n => {
+    let vis = focusing ? rel.has(n.id) : true;
+    if (q) vis = matches(n, q) || (focusing && rel.has(n.id));
+    n.el.classList.toggle("dim", !vis);
+    n.el.classList.toggle("on", st.clicked.has(n.id));
+    n.el.classList.toggle("hover", st.hover === n);
+  });
+  schedule();
+}
+
+function render() {
+  if (!G) return;
+  const far = T.k < 0.5;
+  labelsEl.classList.toggle("far", far);
+  // labels
+  for (const n of G.nodes) {
+    const x = T.applyX(n.x), y = T.applyY(n.y);
+    n.el.style.transform = `translate(${x.toFixed(1)}px,${y.toFixed(1)}px) translate(-50%,-50%)`;
+  }
+  // links
+  ctx.clearRect(0, 0, W, H);
+  const focusing = !!(focusNode() || st.clicked.size || st.q.trim());
+  const act = [];
+  ctx.lineWidth = 0.7;
+  ctx.strokeStyle = `rgba(${theme.line},${focusing ? 0.07 : 0.2})`;
+  ctx.beginPath();
+  for (const l of G.links) {
+    if (activeLink(l)) { act.push(l); continue; }
+    ctx.moveTo(T.applyX(l.source.x), T.applyY(l.source.y)); ctx.lineTo(T.applyX(l.target.x), T.applyY(l.target.y));
+  }
+  ctx.stroke();
+  if (act.length) {
+    ctx.lineWidth = 1.5; ctx.strokeStyle = theme.ink; ctx.beginPath();
+    for (const l of act) { ctx.moveTo(T.applyX(l.source.x), T.applyY(l.source.y)); ctx.lineTo(T.applyX(l.target.x), T.applyY(l.target.y)); }
+    ctx.stroke();
+  }
+}
+
+function clickNode(n) {
+  if (st.clicked.has(n.id)) {
+    st.clicked.delete(n.id);
+    if (st.active === n) st.active = null;
+    if (n.type === "post" && st.readerId === n.post.id) closeReader();
+  } else {
+    st.clicked.add(n.id); st.active = n;
+    centerOn(n);
+    if (n.type === "post") openReader(n.post.id, true);
+  }
+  applyFocus();
+  sim.alpha(0.12).restart();
+}
+
+/* pointer: drag to pin, click to expand */
+labelsEl.addEventListener("pointerdown", e => {
+  const el = e.target.closest(".node"); if (!el || e.button) return;
+  e.stopPropagation();
+  el.setPointerCapture(e.pointerId);
+  dragS = { n:G.byId.get(el.dataset.id), x0:e.clientX, y0:e.clientY, moved:false };
+});
+labelsEl.addEventListener("pointermove", e => {
+  if (!dragS) return;
+  if (!dragS.moved && Math.hypot(e.clientX - dragS.x0, e.clientY - dragS.y0) > 4) { dragS.moved = true; sim.alphaTarget(0.15).restart(); hideTip(); }
+  if (dragS.moved) {
+    const r = gv.getBoundingClientRect();
+    dragS.n.fx = T.invertX(e.clientX - r.left); dragS.n.fy = T.invertY(e.clientY - r.top); schedule();
+  }
+});
+const endDrag = e => {
+  if (!dragS) return; const d = dragS; dragS = null;
+  if (d.moved) { sim.alphaTarget(0); toast("노드를 고정했어요 · 재배치로 풀 수 있어요"); }
+  else if (e.type === "pointerup") clickNode(d.n);
+};
+labelsEl.addEventListener("pointerup", endDrag);
+labelsEl.addEventListener("pointercancel", endDrag);
+labelsEl.addEventListener("click", e => { if (e.detail === 0) { const el = e.target.closest(".node"); if (el) clickNode(G.byId.get(el.dataset.id)); } });
+labelsEl.addEventListener("pointerover", e => {
+  const el = e.target.closest(".node"); if (!el || dragS) return;
+  const n = G.byId.get(el.dataset.id); st.hover = n; applyFocus();
+  const img = n.type === "post" && n.post.image;
+  if (img) {
+    tip.innerHTML = `<img src="${esc(img)}" alt="${esc(n.post.imageAlt || "")}"><span>${esc(n.label)}</span>`;
+    tip.querySelector("img").addEventListener("load", placeTip);
+  } else {
+    tip.textContent = `${n.type === "tag" ? "#" : ""}${n.label} (${G.nbr.get(n.id).size})`;
+  }
+  tip.classList.toggle("img", !!img);
+  tip.classList.add("show");
+  placeTip();
+});
+labelsEl.addEventListener("pointerout", e => {
+  const el = e.target.closest(".node"); if (!el || (e.relatedTarget && el.contains(e.relatedTarget))) return;
+  st.hover = null; applyFocus(); hideTip();
+});
+// image tooltips sit beside the cursor and flip to the other side near the right/bottom edge
+let tipX = 0, tipY = 0;
+function placeTip() {
+  if (!tip.classList.contains("img")) { tip.style.left = tipX + "px"; tip.style.top = tipY + "px"; return; }
+  const w = tip.offsetWidth, h = tip.offsetHeight, m = 12;
+  let x = tipX + 16, y = tipY + 16;
+  if (x + w > innerWidth - m) x = tipX - w - 16;
+  if (y + h > innerHeight - m) y = Math.max(m, innerHeight - h - m);
+  tip.style.left = Math.max(m, x) + "px"; tip.style.top = y + "px";
+}
+gv.addEventListener("pointermove", e => { tipX = e.clientX; tipY = e.clientY; placeTip(); });
+const tip = $("#tip"); const hideTip = () => tip.classList.remove("show");
+
+/* ===================== gallery view ===================== */
+function catOf(p) { return (DATA.categories || []).find(c => c.id === p.category); }
+function postPills(p, opts = {}) {
+  const c = catOf(p);
+  const tags = (p.tags || []);
+  return `${c ? `<button class="pill" style="${sty(c.color)}" data-goto="c:${esc(c.id)}">${esc(c.name)}</button>` : ""}${tags.slice(0, opts.all ? 99 : 4).map(t => `<button class="pill glass" data-goto="t:${esc(t)}">#${esc(t)}</button>`).join("")}${!opts.all && tags.length > 4 ? `<span class="pill glass">+${tags.length - 4}</span>` : ""}`;
+}
+// gallery layout: every card gets a scattered spot once per data load; drag moves it anywhere.
+// Positions are stored relative to the board (x: 0..1 across the free width, y: in card heights) so they survive resizes.
+let gPos = null, gTop = 0;
+const gView = $("#gallery-view"), gal = $("#gallery");
+function tileSize() { const w = gView.clientWidth; return Math.round(Math.min(400, w * (w < 640 ? 0.72 : 0.3))); }
+function scatter(ids) {
+  const W = gView.clientWidth, ts = tileSize(), pad = Math.min(32, W * 0.04);
+  const free = Math.max(1, W - ts - pad * 2);
+  // board tall enough that cards cover ~45% of it: mostly spread out, a few overlaps
+  const H = Math.max(gView.clientHeight - ts - pad * 2, Math.ceil(ids.length * ts * ts / (W * 0.45)) - ts);
+  const placed = [], out = new Map();
+  const overlap = (x, y) => placed.reduce((sum, q) => sum + Math.max(0, ts - Math.abs(q.x - x)) * Math.max(0, ts - Math.abs(q.y - y)), 0);
+  shuffleArr(ids).forEach((id, i) => {
+    let best = null;
+    for (let k = 0; k < 30; k++) {
+      const x = pad + Math.random() * free, y = pad + Math.random() * Math.max(1, H), o = overlap(x, y);
+      if (!best || o < best.o) best = { x, y, o };
+    }
+    placed.push(best);
+    out.set(id, { x: (best.x - pad) / free, y: best.y / ts, z: i + 1 });
+  });
+  gTop = ids.length;
+  return out;
+}
+function shuffleArr(a) { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function placeTiles() {
+  const W = gView.clientWidth, ts = tileSize(), pad = Math.min(32, W * 0.04), free = Math.max(1, W - ts - pad * 2);
+  gal.style.setProperty("--ts", ts + "px");
+  let bottom = 0;
+  gal.querySelectorAll(".tile").forEach(t => {
+    const q = gPos.get(t.dataset.read); if (!q) return;
+    const left = pad + q.x * free, top = q.y * ts;
+    t.style.left = left + "px"; t.style.top = top + "px"; t.style.zIndex = q.z;
+    if (!t.hidden) bottom = Math.max(bottom, top + ts);
+  });
+  gal.style.height = Math.max(gView.clientHeight, bottom + 120) + "px";
+}
+function renderGallery() {
+  const q = st.q.trim().toLowerCase();
+  const ids = G.posts.map(p => p.id);
+  if (!gPos || ids.some(id => !gPos.has(id))) gPos = scatter(ids);
+  const posts = G.posts.filter(p => !q || matches(postNode(p.id), q));
+  $("#gallery").innerHTML = posts.length ? posts.map(p => {
+    const c = catOf(p), style = sty(c ? c.color : NEUTRAL), on = st.readerId === p.id ? " on" : "";
+    return p.image
+      ? `<button class="tile has-img${on}" style="${style}" data-read="${esc(p.id)}" aria-label="${esc(p.title)} 읽기"><img src="${esc(p.image)}" alt="${esc(p.imageAlt || "")}" loading="lazy" draggable="false"><span class="pill cap">${esc(p.title)}</span></button>`
+      : `<button class="tile${on}" style="${style}" data-read="${esc(p.id)}" aria-label="${esc(p.title)} 읽기"><span class="ttl">${esc(p.title)}</span>${c ? `<span class="sub">${esc(c.name)}</span>` : ""}</button>`;
+  }).join("") : `<p class="empty-list">${st.q ? `‘${esc(st.q)}’에 맞는 글이 없어요.` : "아직 글이 없어요."}</p>`;
+  placeTiles();
+}
+const markTile = () => document.querySelectorAll("#gallery .tile").forEach(t => t.classList.toggle("on", t.dataset.read === st.readerId));
+
+/* free drag & drop: grab a card and drop it anywhere on the board; it comes to the front.
+   Mouse: drag after moving a few px. Touch: press and hold, then drag (a quick swipe still scrolls).
+   A plain click/tap still opens the post. */
+let gd = null, eatClick = false;
+function startDrag() {
+  gd.moved = true; gd.t.classList.add("dragging"); gd.t.classList.remove("pressed"); document.body.classList.add("g-dragging");
+  try { gd.t.setPointerCapture(gd.pid); } catch {}
+  gd.t.style.zIndex = ++gTop; gPos.get(gd.id).z = gTop;
+}
+function moveTo(x, y) {
+  const W = gView.clientWidth, ts = tileSize(), pad = Math.min(32, W * 0.04), free = Math.max(1, W - ts - pad * 2);
+  const r = gal.getBoundingClientRect();
+  const left = Math.min(W - ts, Math.max(0, x - r.left - gd.ox)), top = Math.max(0, y - r.top - gd.oy);
+  gd.t.style.left = left + "px"; gd.t.style.top = top + "px";
+  const q = gPos.get(gd.id); q.x = (left - pad) / free; q.y = top / ts;
+  if (top + ts + 120 > gal.offsetHeight) gal.style.height = top + ts + 120 + "px";
+}
+gal.addEventListener("pointerdown", e => {
+  const t = e.target.closest(".tile"); if (!t || e.button) return;
+  const r = t.getBoundingClientRect();
+  gd = { t, id: t.dataset.read, pid: e.pointerId, x0: e.clientX, y0: e.clientY, ox: e.clientX - r.left, oy: e.clientY - r.top, moved: false, touch: e.pointerType !== "mouse", timer: 0 };
+  t.classList.add("pressed");
+  if (gd.touch) gd.timer = setTimeout(() => { if (gd && !gd.moved) { startDrag(); if (navigator.vibrate) navigator.vibrate(10); } }, 350);
+});
+gal.addEventListener("pointermove", e => {
+  if (!gd || e.pointerId !== gd.pid) return;
+  if (!gd.moved) {
+    if (Math.hypot(e.clientX - gd.x0, e.clientY - gd.y0) <= 6) return;
+    if (gd.touch) { clearTimeout(gd.timer); gd.t.classList.remove("pressed"); gd = null; return; } // finger moved before the hold: let it scroll
+    startDrag();
+  }
+  moveTo(e.clientX, e.clientY);
+});
+// while a touch drag is on, stop the page from scrolling
+gal.addEventListener("touchmove", e => { if (gd && gd.moved) e.preventDefault(); }, { passive: false });
+function endTileDrag(e) {
+  if (!gd || (e && e.pointerId !== gd.pid)) return;
+  const d = gd; gd = null; clearTimeout(d.timer);
+  d.t.classList.remove("pressed", "dragging");
+  document.body.classList.remove("g-dragging");
+  if (!d.moved) return;
+  eatClick = true; setTimeout(() => { eatClick = false; }, 0);
+  placeTiles();
+}
+gal.addEventListener("pointerup", endTileDrag);
+gal.addEventListener("pointercancel", endTileDrag);
+gal.addEventListener("lostpointercapture", endTileDrag);
+gal.addEventListener("contextmenu", e => { if (e.target.closest(".tile")) e.preventDefault(); });
+// keep the layout in proportion when the window changes size
+try { new ResizeObserver(() => { if (gPos && !gd) placeTiles(); }).observe(gView); } catch {}
+gal.addEventListener("click", e => { if (eatClick) { e.stopPropagation(); e.preventDefault(); eatClick = false; } }, true);
+
+/* ===================== local graph (one post) ===================== */
+const local = $("#local");
+function openLocal(id) {
+  const p = G.posts.find(x => x.id === id); if (!p) return;
+  st.localId = id;
+  const c = catOf(p);
+  const items = [];
+  if (c) items.push({ kind:"cat", label:c.name, color:c.color, go:"c:" + c.id });
+  (p.tags || []).forEach(t => items.push({ kind:"tag", label:"#" + t, go:"t:" + t }));
+  if (p.date) items.push({ kind:"year", label:String(p.date).slice(0, 4), color:null, sticker:true });
+  linkedPosts(id).forEach(o => { const oc = catOf(o); items.push({ kind:"post", label:o.title, color:oc ? oc.color : NEUTRAL, id:o.id }); });
+  const w = innerWidth, h = innerHeight, cx = w / 2, cy = h * 0.46;
+  const rx = Math.min(w * 0.38, 420), ry = Math.min(h * 0.34, 290);
+  const a0 = (hash(id) % 628) / 100;
+  const pos = items.map((it, i) => {
+    const a = a0 + i / items.length * Math.PI * 2, j = 0.78 + (hash(id + i) % 30) / 100;
+    return [cx + Math.cos(a) * rx * j, cy + Math.sin(a) * ry * j];
+  });
+  local.innerHTML = `<svg aria-hidden="true">${pos.map(([x, y]) => `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}"/>`).join("")}</svg>
+    <button class="pill lg lnode" style="${sty(c ? c.color : NEUTRAL)};z-index:2" data-read="${esc(id)}" data-x="${cx}" data-y="${cy}">${esc(p.title)}</button>
+    ${items.map((it, i) => {
+      const cls = it.kind === "tag" ? "pill glass" : it.kind === "year" ? "pill sticker" : "pill";
+      const attr = it.kind === "post" ? `data-local="${esc(it.id)}"` : it.go ? `data-goto="${esc(it.go)}"` : "";
+      const tag = it.kind === "year" ? "span" : "button";
+      return `<${tag} class="${cls} lnode" ${it.color && it.kind !== "tag" ? `style="${sty(it.color)}"` : ""} ${attr} data-x="${pos[i][0]}" data-y="${pos[i][1]}">${esc(it.label)}</${tag}>`;
+    }).join("")}
+    <div class="lfoot"><button class="pill glass" data-action="close-local">× 닫기</button><button class="pill glass" data-goto="p:${esc(id)}">전체 그래프에서 보기</button></div>`;
+  local.classList.remove("ready");
+  local.classList.add("open");
+  const ns = [...local.querySelectorAll(".lnode")];
+  ns.forEach(el => { el.style.transform = `translate(${cx}px,${cy}px) translate(-50%,-50%)`; });
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    local.classList.add("ready");
+    ns.forEach(el => { el.style.transform = `translate(${el.dataset.x}px,${el.dataset.y}px) translate(-50%,-50%)`; });
+  }));
+  setTimeout(() => { const b = local.querySelector(".lfoot button"); b && b.focus({ preventScroll:true }); }, 50);
+}
+function closeLocal() { local.classList.remove("open", "ready"); local.innerHTML = ""; st.localId = null; }
+
+/* ===================== reader ===================== */
+const reader = $("#reader");
+function openReader(id, fromGraph) {
+  const p = G.posts.find(x => x.id === id); if (!p) return;
+  st.readerId = id;
+  const c = catOf(p), linked = linkedPosts(id);
+  reader.innerHTML = `
+    <div class="reader-top"><button class="pill glass" data-action="close-reader">× 닫기</button></div>
+    <div class="reader-body">
+      <div class="row"><h2 class="pill xl" style="${sty(c ? c.color : NEUTRAL)}">${esc(p.title)}</h2></div>
+      ${p.titleEn ? `<p class="en">${esc(p.titleEn)}</p>` : ""}
+      <div class="row">${postPills(p, { all:true })}</div>
+      <div class="row">${p.date ? `<span class="pill meta">${esc(fmtDate(p.date))}</span>` : ""}<span class="pill meta">연결 ${linked.length}</span></div>
+      <div class="prose">${rhizomeMd(p.body || "")}</div>
+      ${linked.length ? `<div class="linked"><h3>이어지는 글</h3><div class="row">${linked.map(o => { const oc = catOf(o); return `<button class="pill" style="${sty(oc ? oc.color : NEUTRAL)}" data-read="${esc(o.id)}">${esc(o.title)}</button>`; }).join("")}</div></div>` : ""}
+    </div>`;
+  reader.classList.add("open");
+  markTile();
+  reader.querySelector(".reader-body").scrollTop = 0;
+  if (!fromGraph && st.view === "graph") { const n = postNode(id); if (n && !st.clicked.has(n.id)) { st.clicked.add(n.id); st.active = n; applyFocus(); centerOn(n); } }
+}
+function closeReader() { reader.classList.remove("open"); st.readerId = null; markTile(); }
+
+/* ===================== goto (from pills in reader / local) ===================== */
+function gotoNode(nid) {
+  closeLocal();
+  if (location.hash !== "#graph") location.hash = "#graph"; else setView("graph");
+  const n = G.byId.get(nid); if (!n) return;
+  setTimeout(() => {
+    if (!st.clicked.has(n.id)) { st.clicked.add(n.id); }
+    st.active = n; applyFocus(); centerOn(n);
+    if (n.type === "post") openReader(n.post.id, true);
+  }, 60);
+}
+
+/* ===================== HUD ===================== */
+function renderHud() {
+  const pl = G.links.filter(l => l.kind === "post").length;
+  const tags = G.nodes.filter(n => n.type === "tag").length;
+  $("#stats").innerHTML = `<span class="callout">글 ${G.posts.length} · 카테고리 ${G.cats.length} · 태그 ${tags} · 연결 ${pl}</span>` +
+    (src === "sample" ? `<button class="pill sticker" data-action="info">예시 글이에요!</button>` : src === "cache" ? `<button class="pill sticker" data-action="info">오프라인 · 저장된 글</button>` : "");
+  $("#legend").innerHTML = `
+    <div class="row">${G.cats.map(c => `<button class="pill" style="${sty(c.color)}" data-goto="c:${esc(c.id)}">${esc(c.name)}</button>`).join("")}<span class="pill glass">#태그</span></div>
+    <p class="hint">드래그로 이동하고 휠로 확대해요. 라벨을 누르면 펼쳐지고, 여러 개를 누르면 그 사이의 길이 밝아져요. 라벨을 끌어 놓으면 그 자리에 고정돼요.</p>`;
+}
+function setView(v) {
+  st.view = v;
+  document.body.classList.toggle("v-graph", v === "graph");
+  document.body.classList.toggle("v-gallery", v === "gallery");
+  document.querySelectorAll("#views-menu [data-view]").forEach(a => a.setAttribute("aria-current", a.dataset.view === v));
+  $("#views").classList.remove("open"); $("[data-action=views]").setAttribute("aria-expanded", "false");
+  if (v === "graph") { sizeCanvas(); schedule(); }
+}
+
+/* ===================== info + data loading ===================== */
+const info = $("#info");
+function openInfo() {
+  info.innerHTML = `<div class="info-card">
+    <h2 id="info-title">리좀 웹진</h2>
+    <p>글과 글이 위계 없이 옆으로 이어지는 웹진이에요. 목록에서 읽어도 되고, 그래프에서 아무 글에서나 시작해도 돼요.</p>
+    <p><b>지금 보는 글</b><br>${
+      src !== "sample" && !G.posts.length ? "아직 발행된 글이 없어요. 어드민에서 글을 ‘발행’으로 저장하면 1~2분 안에 여기 나타나요."
+      : src === "live" ? `어드민에서 발행한 글 ${G.posts.length}편이에요. 어드민에서 저장하면 1~2분 안에 여기 반영돼요.`
+      : src === "cache" ? `서버에 연결하지 못해 이 브라우저에 저장된 마지막 글 ${G.posts.length}편을 보여줘요.`
+      : "아직 발행된 글이 없어서 예시 글 12편을 보여줘요. 어드민에서 글을 ‘발행’으로 저장하면 여기에 나타나요."}${
+      src !== "sample" && DATA.meta && DATA.meta.updatedAt ? `<br><span style="color:var(--muted)">마지막 수정 ${esc(new Date(DATA.meta.updatedAt).toLocaleString("ko-KR"))}</span>` : ""}</p>
+    <div class="row"><button class="pill primary" data-action="refresh">새로 불러오기</button><button class="pill glass" data-action="close-info">닫기</button></div>
+  </div>`;
+  info.classList.add("open");
+  setTimeout(() => info.querySelector("[data-action=refresh]").focus(), 30);
+}
+function closeInfo() { info.classList.remove("open"); }
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && G) refresh(false); });
+
+let toastT;
+function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("show"), 2400); }
+
+/* ===================== events ===================== */
+document.addEventListener("click", e => {
+  const t = e.target.closest("[data-action],[data-read],[data-local],[data-goto],[data-view]");
+  if (!t || t.closest("#labels")) return;
+  if (t.dataset.view) { $("#views").classList.remove("open"); return; }
+  if (t.dataset.read) { closeLocal(); openReader(t.dataset.read); return; }
+  if (t.dataset.local) { openLocal(t.dataset.local); return; }
+  if (t.dataset.goto) { gotoNode(t.dataset.goto); return; }
+  switch (t.dataset.action) {
+    case "home": closeReader(); closeLocal(); if (st.view === "graph") { st.clicked.clear(); st.active = null; applyFocus(); fit(); } break;
+    case "views": { const v = $("#views"); v.classList.toggle("open"); t.setAttribute("aria-expanded", v.classList.contains("open")); break; }
+    case "legend": { const l = $("#legend"); l.classList.toggle("open"); t.setAttribute("aria-expanded", l.classList.contains("open")); break; }
+    case "search": { const s = $("#search"); s.classList.toggle("open"); if (s.classList.contains("open")) s.focus(); else { s.value = ""; st.q = ""; applyFocus(); renderGallery(); } break; }
+    case "theme": setTheme(!document.documentElement.classList.contains("light"), true); break;
+    case "info": openInfo(); break;
+    case "close-info": closeInfo(); break;
+    case "refresh": refresh(true); break;
+    case "close-reader": closeReader(); break;
+    case "close-local": closeLocal(); break;
+    case "zoom-in": d3.select(gv).transition().duration(300).call(zoom.scaleBy, 1.35); break;
+    case "zoom-out": d3.select(gv).transition().duration(300).call(zoom.scaleBy, 1 / 1.35); break;
+    case "reheat": G.nodes.forEach(n => { n.fx = n.fy = null; }); sim.alpha(0.8).restart(); setTimeout(() => fit(), 1400); break;
+  }
+});
+gv.addEventListener("click", e => {
+  if (e.target === gv || e.target === canvas || e.target === labelsEl) {
+    if (st.clicked.size && !e.defaultPrevented) { /* empty click keeps the path, like Biblio-Graph */ }
+  }
+});
+$("#search").addEventListener("input", e => { st.q = e.target.value; applyFocus(); renderGallery(); });
+document.addEventListener("keydown", e => {
+  if (e.key !== "Escape") return;
+  if (info.classList.contains("open")) closeInfo();
+  else if (local.classList.contains("open")) closeLocal();
+  else if (reader.classList.contains("open")) closeReader();
+  else if ($("#views").classList.contains("open")) $("#views").classList.remove("open");
+  else if (st.clicked.size) { st.clicked.clear(); st.active = null; applyFocus(); }
+});
+addEventListener("hashchange", () => setView(viewFromHash()));
+try { new ResizeObserver(() => { if (G) { sizeCanvas(); schedule(); } }).observe(gv); } catch {}
+let rz; addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => { sizeCanvas(); schedule(); if (st.localId) openLocal(st.localId); }, 120); });
+
+/* ===================== markdown ===================== */
+/* rhizome-md:start */
+function rhizomeMd(src) {
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const safeUrl = u => {
+    u = String(u || "").trim().replace(/^<([\s\S]*)>$/, "$1");
+    const probe = u.replace(/&#x?[0-9a-f]+;?|&colon;?/gi, ":").replace(/[\s\x00-\x1f]/g, "").toLowerCase();
+    return /^[a-z][a-z0-9+.-]*:/.test(probe) && !/^(https?|mailto|tel):/.test(probe) ? "" : u;
+  };
+  const inline = (s, inLink) => {
+    const keep = [], put = h => "\u0000" + (keep.push(h) - 1) + "\u0000";
+    s = s.replace(inLink ? /\u0000/g : /[\u0000\u0001]/g, "");
+    s = s.replace(/\\([\\`*_{}\[\]()#+\-.!~|>])/g, (_, c) => put(esc(c)));
+    s = s.replace(/(`+)([^`]|[^`][\s\S]*?[^`])\1(?!`)/g, (_, f, c) => put(`<code>${esc(c.replace(/^ ([\s\S]*) $/, "$1"))}</code>`));
+    const target = String.raw`\(\s*(<[^>\n]*>|(?:[^\s()]|\([^\s()]*\))+)(?:\s+"([^"]*)")?\s*\)`;
+    s = s.replace(new RegExp(String.raw`!\[([^\]]*)\]` + target, "g"), (_, alt, url, title) => {
+      const u = safeUrl(url);
+      return put(u ? `<img src="${esc(u)}" alt="${esc(alt)}"${title ? ` title="${esc(title)}"` : ""} loading="lazy">` : esc(alt));
+    });
+    const a = (u, title) => `<a href="${esc(u)}"${title ? ` title="${esc(title)}"` : ""}${/^https?:/i.test(u) ? ' target="_blank" rel="noopener"' : ""}>`;
+    if (!inLink) {
+      s = s.replace(new RegExp(String.raw`\[((?:[^\[\]]|\[[^\]]*\])+)\]` + target, "g"), (_, text, url, title) => {
+        const u = safeUrl(url), t = inline(text.replace(/\u0000(\d+)\u0000/g, (_, i) => "\u0001" + i + "\u0001"), true).replace(/\u0001(\d+)\u0001/g, (_, i) => keep[i]);
+        return u ? put(a(u, title) + t + "</a>") : put(t);
+      });
+      s = s.replace(/<((?:https?:\/\/|mailto:)[^\s<>]+)>/g, (_, u) => put(a(u) + esc(u.replace(/^mailto:/, "")) + "</a>"));
+      s = s.replace(/\bhttps?:\/\/[^\s<>\u0000]*[^\s<>\u0000.,:;"')\]!?]/g, u => put(a(u) + esc(u) + "</a>"));
+    }
+    s = esc(s)
+      .replace(/(\*\*\*|___)(?=\S)([\s\S]*?\S)\1/g, "<strong><em>$2</em></strong>")
+      .replace(/\*\*(?=\S)([\s\S]*?\S)\*\*/g, "<strong>$1</strong>")
+      .replace(/(^|[^\w])__(?=\S)([\s\S]*?\S)__(?!\w)/g, "$1<strong>$2</strong>")
+      .replace(/\*(?=[^\s*])([^*]*?[^\s*]|[^\s*])\*/g, "<em>$1</em>")
+      .replace(/(^|[^\w])_(?=[^\s_])([^_]*?[^\s_]|[^\s_])_(?!\w)/g, "$1<em>$2</em>")
+      .replace(/~~(?=\S)([\s\S]*?\S)~~/g, "<del>$1</del>")
+      .replace(/ {2,}\n|\\\n|\n/g, "<br>\n");
+    return s.replace(/\u0000(\d+)\u0000/g, (_, i) => keep[i]);
+  };
+
+  const FENCE = /^ {0,3}(`{3,}|~{3,})\s*([^\s`]*)[^`]*$/, HEAD = /^ {0,3}(#{1,6})(?:[ \t]+(.*?))?(?:[ \t]+#+)?[ \t]*$/,
+    HR = /^ {0,3}([-*_])(?:[ \t]*\1){2,}[ \t]*$/, QUOTE = /^ {0,3}>/, LI = /^( *)([-*+]|\d{1,9}[.)])(?:[ \t]+|$)/,
+    TSEP = /^ *\|? *:?-+:? *(?:\| *:?-+:? *)*\|? *$/, SETEXT = /^ {0,3}(=+|-+)[ \t]*$/;
+  const indentOf = l => l.match(/^ */)[0].length;
+  const blank = l => /^\s*$/.test(l);
+  const cells = row => {
+    const out = []; let cur = "", tick = false;
+    row = row.trim().replace(/^\|/, "").replace(/(^|[^\\])\|$/, "$1");
+    for (let i = 0; i < row.length; i++) {
+      const c = row[i];
+      if (c === "\\" && row[i + 1] === "|") { cur += "|"; i++; continue; }
+      if (c === "`") tick = !tick;
+      if (c === "|" && !tick) { out.push(cur.trim()); cur = ""; } else cur += c;
+    }
+    out.push(cur.trim());
+    return out;
+  };
+  const isTable = (ls, i) => ls[i].includes("|") && i + 1 < ls.length && ls[i + 1].includes("-") && TSEP.test(ls[i + 1]) && (ls[i + 1].includes("|") || cells(ls[i]).length > 1);
+  const starts = (ls, i) => FENCE.test(ls[i]) || HEAD.test(ls[i]) || HR.test(ls[i]) || QUOTE.test(ls[i]) || LI.test(ls[i]) || isTable(ls, i);
+
+  function list(ls, i) {
+    const m0 = ls[i].match(LI), base = m0[1].length, ordered = /\d/.test(m0[2]);
+    const items = []; let loose = false;
+    while (i < ls.length) {
+      const m = ls[i].match(LI);
+      if (!m || m[1].length !== base || /\d/.test(m[2]) !== ordered) break;
+      const pad = Math.min(m[0].length, base + 6);
+      const body = [ls[i].slice(m[0].length)];
+      i++;
+      while (i < ls.length) {
+        const l = ls[i];
+        if (blank(l)) {
+          let j = i; while (j < ls.length && blank(ls[j])) j++;
+          if (j < ls.length && indentOf(ls[j]) > base && !(LI.test(ls[j]) && indentOf(ls[j]) <= base)) { for (; i < j; i++) body.push(""); loose = true; continue; }
+          if (j < ls.length && LI.test(ls[j]) && indentOf(ls[j]) === base) loose = true;
+          i = j; break;
+        }
+        if (indentOf(l) > base) { body.push(l.replace(new RegExp(`^ {0,${pad}}`), "")); i++; continue; }
+        if (starts(ls, i)) break;
+        if (blank(body[body.length - 1])) break;
+        body.push(l); i++;
+      }
+      items.push(body);
+      if (i < ls.length && blank(ls[i - 1]) && !(LI.test(ls[i]) && indentOf(ls[i]) === base)) break;
+    }
+    const start = ordered ? parseInt(m0[2], 10) : 1;
+    const html = items.map(body => {
+      let pre = "";
+      const t = body[0].match(/^\[([ xX])\][ \t]+/);
+      if (t) { pre = `<input type="checkbox" disabled${t[1] === " " ? "" : " checked"}> `; body[0] = body[0].slice(t[0].length); }
+      return `<li${t ? ' class="task"' : ""}>${pre}${blocks(body, !loose)}</li>`;
+    }).join("\n");
+    const tag = ordered ? "ol" : "ul";
+    return [`<${tag}${ordered && start !== 1 ? ` start="${start}"` : ""}>\n${html}\n</${tag}>`, i];
+  }
+
+  function blocks(ls, tight) {
+    const out = []; let i = 0;
+    while (i < ls.length) {
+      const l = ls[i]; let m;
+      if (blank(l)) { i++; continue; }
+      if ((m = l.match(FENCE))) {
+        const close = new RegExp(`^ {0,3}${m[1][0] === "`" ? "`" : "~"}{${m[1].length},}[ \\t]*$`), ind = indentOf(l), code = [];
+        for (i++; i < ls.length && !close.test(ls[i]); i++) code.push(ls[i].replace(new RegExp(`^ {0,${ind}}`), ""));
+        i++;
+        out.push(`<pre><code${m[2] ? ` class="language-${esc(m[2])}"` : ""}>${esc(code.join("\n"))}</code></pre>`);
+        continue;
+      }
+      if ((m = l.match(HEAD))) { const d = Math.min(m[1].length + 1, 6); out.push(`<h${d}>${inline(m[2] || "")}</h${d}>`); i++; continue; }
+      if (HR.test(l)) { out.push("<hr>"); i++; continue; }
+      if (QUOTE.test(l)) {
+        const q = [];
+        for (; i < ls.length && !blank(ls[i]) && (QUOTE.test(ls[i]) || !starts(ls, i)); i++) q.push(ls[i].replace(/^ {0,3}> ?/, ""));
+        out.push(`<blockquote>\n${blocks(q)}\n</blockquote>`);
+        continue;
+      }
+      if (LI.test(l) && !(LI.exec(l)[0].trim() === l.trim() && blank(ls[i + 1] || ""))) { const [h, j] = list(ls, i); out.push(h); i = j; continue; }
+      if (isTable(ls, i)) {
+        const head = cells(ls[i]), al = cells(ls[i + 1]).map(c => /^:-+:$/.test(c) ? "center" : /-:$/.test(c) ? "right" : /^:-/.test(c) ? "left" : "");
+        const td = (tag, c, k) => `<${tag}${al[k] ? ` style="text-align:${al[k]}"` : ""}>${inline(c)}</${tag}>`;
+        const rows = [];
+        for (i += 2; i < ls.length && !blank(ls[i]) && ls[i].includes("|"); i++) rows.push(cells(ls[i]));
+        out.push(`<div class="table"><table>\n<thead><tr>${head.map((c, k) => td("th", c, k)).join("")}</tr></thead>\n<tbody>\n${rows.map(r => `<tr>${head.map((_, k) => td("td", r[k] || "", k)).join("")}</tr>`).join("\n")}\n</tbody></table></div>`);
+        continue;
+      }
+      const para = [l.trim()];
+      for (i++; i < ls.length && !blank(ls[i]); i++) {
+        if ((m = ls[i].match(SETEXT))) break;
+        if (starts(ls, i) && !(LI.test(ls[i]) && /^\d/.test(ls[i].trim()) && !/^1[.)]/.test(ls[i].trim()))) break;
+        para.push(ls[i].trim());
+      }
+      if (i < ls.length && (m = ls[i].match(SETEXT))) { const d = m[1][0] === "=" ? 2 : 3; out.push(`<h${d}>${inline(para.join("\n"))}</h${d}>`); i++; continue; }
+      out.push(tight ? inline(para.join("\n")) : `<p>${inline(para.join("\n"))}</p>`);
+    }
+    return out.join("\n");
+  }
+
+  const lines = String(src ?? "").replace(/\r\n?/g, "\n").replace(/^\t+/gm, t => "    ".repeat(t.length)).split("\n");
+  return blocks(lines);
+}
+/* rhizome-md:end */
+
+/* ===================== boot ===================== */
+let savedTheme = null; try { savedTheme = localStorage.getItem("rhizome-theme"); } catch {}
+setTheme(savedTheme !== "dark", false); // light by default; dark only if the viewer chose it
+function boot() {
+  G = buildGraph(DATA);
+  $("#graph-empty").hidden = G.posts.length > 0;
+  gPos = null;
+  renderHud(); renderGallery();
+  setView(st.view);
+  initGraph();
+}
+if (typeof d3 === "undefined") {
+  document.body.innerHTML = '<p style="padding:24px;font-family:monospace;color:#fffaf0">그래프 라이브러리를 불러오지 못했어요. 페이지를 새로고침해 주세요.</p>';
+} else {
+  Promise.all([document.fonts ? document.fonts.ready : null, loadLive()]).then(boot);
+}
+})();
+</script>
+</body>
+</html>
