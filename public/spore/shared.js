@@ -197,16 +197,12 @@ document.addEventListener("visibilitychange", () => { if (document.visibilitySta
 /* posts with everything derived once: number, length tier, concepts, links */
 let POSTS = [], BYID = new Map(), LINKS = [], NBR = new Map(), CATS = new Map();
 const TIER_MAX = 5000;
-/* 3D 모션: Higgsfield(Meshy)로 만든 3D 포자 4종을 4~5단계(긴) 글에 하나씩 이어 줘요.
-   글 번호 순서대로 4종을 돌아가며 붙이고, 같은 모델이 두 번째로 쓰일 땐 색조·속도·각도를 바꿔 다른 포자처럼 보이게 해요.
-   특정 글을 직접 정하려면 MOTION_PICK에 { 글ID: 모델 번호(0~3) } 를 적어요. */
+/* 3D 포자: Higgsfield로 만든 서로 다른 디자인 11종을 4~5단계(긴) 글에 하나씩 이어 줘요.
+   글 번호 순서대로 cell01부터 붙이고, 11편을 넘으면 처음부터 다시 쓰되 색조를 돌려 구별해요.
+   특정 글을 직접 정하려면 MOTION_PICK에 { 글ID: 디자인 번호(0~10) } 를 적어요. */
 const MOTION_TIER = 4;
-const MOTIONS = [
-  { name: "spin",   src: "/spore/media/spore-spin.glb" },    // 회전 모델(원래 6초에 한 바퀴)
-  { name: "still",  src: "/spore/media/spore-still.glb" },   // 원본(정지형)
-  { name: "quad",   src: "/spore/media/spore-quad.glb" },    // 편집용 쿼드 메시
-  { name: "mobile", src: "/spore/media/spore-mobile.glb" }   // 모바일 저용량
-];
+// 글마다 다른 3D 포자 디자인 11종(Higgsfield, glassy v2 — 유리질·무지갯빛). 텍스처를 1024px로 줄여 media/cells/에 둠
+const MOTIONS = Array.from({ length: 11 }, (_, i) => { const n = String(i + 1).padStart(2, "0"); return { name: "cell" + n, src: `/spore/media/cells/cell${n}.glb` }; });
 const MOTION_LOOK = [   // 순서대로 쓰이는 색조(deg)·회전 속도(deg/s)·처음 각도·기울기
   { hue: 0, speed: 16, theta: 0, tilt: 78 },   { hue: 105, speed: 20, theta: 120, tilt: 66 }, { hue: 205, speed: 12, theta: 250, tilt: 92 }, { hue: -35, speed: 24, theta: 40, tilt: 72 },
   { hue: 150, speed: 10, theta: 300, tilt: 60 }, { hue: 45, speed: 18, theta: 200, tilt: 84 }, { hue: 270, speed: 14, theta: 80, tilt: 70 }, { hue: -90, speed: 22, theta: 160, tilt: 96 }
@@ -269,13 +265,11 @@ function index() {
   // 3D 모션 잇기: 4~5단계 글, 글 번호 순서
   POSTS.forEach(p => { p._motion = null; });
   POSTS.filter(p => p._tier >= MOTION_TIER).sort((a, b) => a._no - b._no).forEach((p, i) => {
-    const m = MOTIONS[MOTION_PICK[p.id] ?? i % MOTIONS.length], R = rnd("motion_" + p.id), T = TOPICS[p._topic];
-    const look = MOTION_LOOK[i % MOTION_LOOK.length];
-    // 원본 모델은 분홍빛(색상각 약 330°) — 의제 색의 색상각으로 돌려서 물들여요
-    p._motion = { speed: look.speed, theta: Math.round(R() * 360), tilt: look.tilt, hue: Math.round(hueOf(rgb(T.color)) - 330 + (R() - .5) * 24),
-      tint: mix(rgb(T.color), [255, 255, 255], .55).map(v => +(v / 255).toFixed(3)),
-      glow: (p._topic2 ? rgb(TOPICS[p._topic2].color) : rgb(T.tint)).map(v => +(v / 255 * .16).toFixed(3)),
-      stretch: TYPE_STRETCH[p.spore.contentType] || [1, 1, 1], name: m.name, src: m.src, mobileSrc: MOTIONS[3].src };
+    const k = MOTION_PICK[p.id] ?? i % MOTIONS.length, m = MOTIONS[k], R = rnd("motion_" + p.id), look = MOTION_LOOK[i % MOTION_LOOK.length];
+    // 디자인은 그대로 살려요. 11종을 다 쓴 뒤 다시 쓰이는 디자인만 색조를 돌려서 구별해요
+    const again = !(p.id in MOTION_PICK) && i >= MOTIONS.length;
+    p._motion = { speed: look.speed, theta: Math.round(R() * 360), tilt: look.tilt, hue: again ? 90 + Math.round(R() * 180) : 0,
+      name: m.name, src: m.src, mobileSrc: m.src };
   });
   const seen = new Set(); LINKS = [];
   (DATA.links || []).forEach(l => {
