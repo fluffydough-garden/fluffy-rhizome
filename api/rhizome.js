@@ -31,7 +31,14 @@ export async function GET(req) {
     id: p.id, slug: p.slug || slugify(p.titleEn || p.title), title: p.title || "", titleEn: p.titleEn || "",
     category: p.categoryId || null, tags: p.tags || [], date: p.date || "", weight: Number(p.weight) || 5,
     summary: p.summary || "", image: p.image || null, imageAlt: p.imageAlt || "",
-    body: p.body || "", bodyHtml: rhizomeMd(p.body || ""), updatedAt: p.updatedAt || ""
+    body: p.body || "", bodyHtml: rhizomeMd(p.body || ""), updatedAt: p.updatedAt || "",
+    // 포자 이미지: 승인된 것만 공개. 속성은 웹진 표현(색·형태)에 쓸 수 있게 함께
+    spore: p.spore ? {
+      image: p.spore.approvedImage || null,
+      contentType: p.spore.contentType || null, primaryTopic: p.spore.primaryTopic || null, secondaryTopic: p.spore.secondaryTopic || null,
+      complexity: p.spore.complexity ?? null, connectivity: p.spore.connectivity ?? null, symmetry: p.spore.symmetry ?? null,
+      morphology: p.spore.morphology || "", palette: p.spore.palette || [], seed: p.spore.seed || ""
+    } : null
   });
 
   const one = q.get("slug") || q.get("id");

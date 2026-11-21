@@ -32,6 +32,8 @@ export async function POST(req) {
       const coll = db[o.coll];
       const data = o.data && typeof o.data === "object" ? { ...o.data } : {};
       delete data.id;
+      // 포자 이미지 상태는 /api/spore가 따로 관리 — 글을 통째로 저장해도 지우거나 예전 값으로 덮지 않음
+      if (o.coll === "posts") { delete data.spore; if (coll[o.id]?.spore) data.spore = coll[o.id].spore; }
       if (o.op === "set") coll[o.id] = data;
       else if (o.op === "update") { if (coll[o.id]) coll[o.id] = { ...coll[o.id], ...data }; }
       else delete coll[o.id];

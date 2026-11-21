@@ -98,6 +98,8 @@ p{margin:0}
 .fb.recent .cap{box-shadow:0 0 0 1px rgba(0,0,0,.3),0 0 0 6px rgba(var(--trace-rgb),.2),0 0 18px 3px rgba(var(--trace-rgb),.5)}
 .fb.far{opacity:.75}
 /* 글자수 구간별 자리: 나중에 받을 비주얼(이미지·영상)은 여기서 .tier-N .cap 에 연결 */
+.fb.has-spore .cap{background:var(--img) center/contain no-repeat;border-radius:0;box-shadow:none;filter:drop-shadow(0 4px 10px rgba(0,0,0,.6))}
+.fb.has-spore.focus .cap,.fb.has-spore.both .cap,.fb.has-spore.recent .cap{box-shadow:none;filter:drop-shadow(0 0 12px rgba(var(--spore-rgb),.6))}
 .fb.tier-1 .cap{}
 .fb.tier-2 .cap{}
 .fb.tier-3 .cap{}
@@ -155,6 +157,7 @@ body.panel-open .bottom{right:calc(var(--pw) + 22px)}
 .p-sub{padding:4px 24px 14px;font-size:12px;color:var(--paper-muted);border-bottom:1px solid rgba(0,0,0,.1)}
 .p-body{flex:1;overflow-y:auto;padding:26px 32px 90px;display:flex;flex-direction:column;gap:10px}
 .p-body .no{color:var(--paper-muted)}
+.p-body .spec{width:132px;height:132px;object-fit:contain;margin:-6px 0 4px -10px}
 .p-body h2{font-family:var(--f-display);font-size:34px;line-height:1.1}
 .p-body .en{font-family:var(--f-mono);font-size:12px;color:var(--paper-muted)}
 .p-body .meta{color:var(--paper-muted)}
@@ -374,6 +377,7 @@ let G = null;
    구간별 비주얼은 CSS의 .fb.tier-1 ~ .tier-5 / --cs(크기)에서 바꾸면 됨 */
 const TIER_MAX = 5000;
 const TIER_SIZE = { 1: 10, 2: 14, 3: 19, 4: 25, 5: 34 }; // cap diameter, px
+const SPORE_IMG_SCALE = 2.4; // a spore image needs more room than a plain cap to read
 const charCount = p => plain(p.body).length;
 function assignTiers(list) {
   const short = list.filter(n => n.chars < TIER_MAX).map(n => n.chars).sort((a, b) => a - b);
@@ -597,7 +601,9 @@ function fruit(n) {
   const p = n.post, body = plain(p.body), short = body.length <= 180;
   const R = rnd("cap" + p.id), br = `${40 + R() * 30}% ${40 + R() * 30}% ${40 + R() * 30}% ${40 + R() * 30}% / ${40 + R() * 30}% ${40 + R() * 30}% ${40 + R() * 30}% ${40 + R() * 30}%`;
   const ex = short ? body : (p.summary || body.slice(0, 110) + "…");
-  return `<div class="fb tier-${n.tier}" data-post="${esc(p.id)}" data-node="${esc(n.id)}" data-tier="${n.tier}" data-chars="${n.chars}" style="--br:${br};--cs:${TIER_SIZE[n.tier]}px">
+  // 어드민에서 승인한 포자 이미지가 있으면 갓 대신 그 이미지 (크기는 글자수 구간을 그대로 따름)
+  const si = p.spore && p.spore.image;
+  return `<div class="fb tier-${n.tier}${si ? " has-spore" : ""}" data-post="${esc(p.id)}" data-node="${esc(n.id)}" data-tier="${n.tier}" data-chars="${n.chars}" style="--br:${br};--cs:${TIER_SIZE[n.tier] * (si ? SPORE_IMG_SCALE : 1)}px${si ? `;--img:url('${esc(encodeURI(si))}')` : ""}">
     <span class="cap"></span><span class="t">${esc(p.title)}</span>
     <button class="card" data-post="${esc(p.id)}" aria-label="${esc(p.title)} 읽기">
       ${p.image ? `<img src="${esc(p.image)}" alt="" loading="lazy">` : ""}
@@ -679,6 +685,7 @@ function renderPanel() {
     <div class="p-top"><span class="mono">Mycelium / Explore</span><button class="btn round" data-action="close" aria-label="닫기">×</button></div>
     <p class="p-sub">균사는 선택한 글의 연결을 유지해요</p>
     <div class="p-body">
+      ${p.spore && p.spore.image ? `<img class="spec" src="${esc(p.spore.image)}" alt="">` : ""}
       <span class="mono no">Article / ${String(n.no).padStart(3, "0")}</span>
       <h2>${esc(p.title)}</h2>
       ${p.titleEn ? `<p class="en">${esc(p.titleEn)}</p>` : ""}

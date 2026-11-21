@@ -13,8 +13,11 @@ export async function POST(req) {
   const buf = Buffer.from(await req.arrayBuffer());
   if (!buf.length) return json({ error: "empty" }, 400);
   if (buf.length > MAX) return json({ error: "too_large" }, 413);
-  const id = (new URL(req.url).searchParams.get("id") || "post").replace(/[^A-Za-z0-9_-]/g, "").slice(0, 64) || "post";
-  const blob = await put(`images/${id}.${ext}`, buf, { access: "public", contentType: type, addRandomSuffix: true });
+  const q = new URL(req.url).searchParams;
+  const id = (q.get("id") || "post").replace(/[^A-Za-z0-9_-]/g, "").slice(0, 64) || "post";
+  // kind=spore: 어드민에서 직접 올리는 포자 이미지 (spores/ 아래, /api/spore의 use-upload로 글에 붙임)
+  const dir = q.get("kind") === "spore" ? "spores" : "images";
+  const blob = await put(`${dir}/${id}.${ext}`, buf, { access: "public", contentType: type, addRandomSuffix: true });
   return json({ url: blob.url });
 }
 
