@@ -189,7 +189,7 @@ function renderHero() {
     const front = hash(p.id) % 5 < 2, s = Math.round(TIER_PX[p._tier] * k);
     const el = `<button class="sp" data-read="${esc(p.id)}" aria-label="${esc(SP.titleOf(p))}"
       style="left:${(best[0] * 100).toFixed(2)}%;top:${(best[1] * 100).toFixed(2)}%;--s:${s}px;--d:${(4 + R() * 4).toFixed(2)}s;--dl:${(-R() * 6).toFixed(2)}s;--r:${((R() - .5) * 30).toFixed(1)}deg">
-      <span class="sp-body">${SP.sporeImg(p)}</span><span class="sp-lbl"><span class="mono">${esc(t("article"))} / ${SP.no(p)}</span>${esc(SP.titleOf(p))}</span></button>`;
+      <span class="sp-body">${SP.sporeImg(p, "", true)}</span><span class="sp-lbl"><span class="mono">${esc(t("article"))} / ${SP.no(p)}</span>${esc(SP.titleOf(p))}</span></button>`;
     out[front ? "front" : "back"] += el;
   });
   $("#field-back").innerHTML = out.back; $("#field-front").innerHTML = out.front;
@@ -291,7 +291,7 @@ function item(p) {
     ${media}
     <div class="li-text"><span class="mono muted">${esc(t("article"))} / ${SP.no(p)}</span><h3>${esc(SP.titleOf(p))}</h3>${SP.summaryOf(p) ? `<p class="li-sum">${esc(SP.summaryOf(p))}</p>` : ""}
       <p class="li-meta"><i class="dot" style="background:${TOPICS[p._topic].color}"></i>${c || p._topic !== "unclassified" ? `<b>${esc(c ? SP.catName(c) : tp[0])}</b>` : ""}${p.date ? `<span>•</span><span>${esc(fmtDate(p.date))}</span>` : ""}${(p.tags || []).slice(0, 3).map(x => `<span class="tag">${esc(x)}</span>`).join("")}</p></div>
-    <div class="li-spore">${SP.sporeImg(p)}</div>
+    <div class="li-spore">${SP.sporeImg(p, "", true)}</div>
   </button></article>`;
 }
 function resetArchive() {

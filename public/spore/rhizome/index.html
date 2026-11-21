@@ -474,7 +474,7 @@ function renderPanel() {
     <div class="p-top"><span class="mono">${esc(t("explore"))}</span><button class="btn round" data-action="close" aria-label="${esc(t("close"))}">×</button></div>
     <p class="p-sub">${esc(t("keepsLinks"))}</p>
     <div class="p-body">
-      <img class="spec" src="${SP.sporeSrc(p)}" alt="">
+      ${n.post._motion ? `<div class="spec">${SP.sporeImg(p, "", true)}</div>` : `<img class="spec" src="${SP.sporeSrc(p)}" alt="">`}
       <span class="mono no">${esc(t("article"))} / ${SP.no(p)}</span>
       <h2>${esc(title)}</h2>
       ${alt ? `<p class="en">${esc(alt)}</p>` : ""}

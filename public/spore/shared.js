@@ -197,6 +197,21 @@ document.addEventListener("visibilitychange", () => { if (document.visibilitySta
 /* posts with everything derived once: number, length tier, concepts, links */
 let POSTS = [], BYID = new Map(), LINKS = [], NBR = new Map(), CATS = new Map();
 const TIER_MAX = 5000;
+/* 3D 모션: Higgsfield(Meshy)로 만든 3D 포자 4종을 4~5단계(긴) 글에 하나씩 이어 줘요.
+   글 번호 순서대로 4종을 돌아가며 붙이고, 같은 모델이 두 번째로 쓰일 땐 색조·속도·각도를 바꿔 다른 포자처럼 보이게 해요.
+   특정 글을 직접 정하려면 MOTION_PICK에 { 글ID: 모델 번호(0~3) } 를 적어요. */
+const MOTION_TIER = 4;
+const MOTIONS = [
+  { name: "spin",   src: "/spore/media/spore-spin.glb" },    // 회전 모델(원래 6초에 한 바퀴)
+  { name: "still",  src: "/spore/media/spore-still.glb" },   // 원본(정지형)
+  { name: "quad",   src: "/spore/media/spore-quad.glb" },    // 편집용 쿼드 메시
+  { name: "mobile", src: "/spore/media/spore-mobile.glb" }   // 모바일 저용량
+];
+const MOTION_LOOK = [   // 순서대로 쓰이는 색조(deg)·회전 속도(deg/s)·처음 각도·기울기
+  { hue: 0, speed: 16, theta: 0, tilt: 78 },   { hue: 105, speed: 20, theta: 120, tilt: 66 }, { hue: 205, speed: 12, theta: 250, tilt: 92 }, { hue: -35, speed: 24, theta: 40, tilt: 72 },
+  { hue: 150, speed: 10, theta: 300, tilt: 60 }, { hue: 45, speed: 18, theta: 200, tilt: 84 }, { hue: 270, speed: 14, theta: 80, tilt: 70 }, { hue: -90, speed: 22, theta: 160, tilt: 96 }
+];
+const MOTION_PICK = {};
 function index() {
   CATS = new Map((DATA.categories || []).map(c => [c.id, c]));
   POSTS = (DATA.nodes || []).filter(p => p && p.title);
@@ -213,6 +228,12 @@ function index() {
   // 글자수 구간: 5000자 이상 = 5, 그 아래는 서로 비교해 1~4 (짧은 순으로 4등분, 같은 글자수는 같은 구간)
   const short = POSTS.filter(p => p._chars < TIER_MAX).map(p => p._chars).sort((a, b) => a - b);
   POSTS.forEach(p => { p._tier = p._chars >= TIER_MAX ? 5 : short.length > 1 ? 1 + Math.min(3, Math.floor(short.indexOf(p._chars) / short.length * 4)) : 2; });
+  // 3D 모션 잇기: 4~5단계 글, 글 번호 순서
+  POSTS.forEach(p => { p._motion = null; });
+  POSTS.filter(p => p._tier >= MOTION_TIER).sort((a, b) => a._no - b._no).forEach((p, i) => {
+    const m = MOTIONS[MOTION_PICK[p.id] ?? i % MOTIONS.length];
+    p._motion = { ...MOTION_LOOK[i % MOTION_LOOK.length], name: m.name, src: m.src, mobileSrc: MOTIONS[3].src };
+  });
   const seen = new Set(); LINKS = [];
   (DATA.links || []).forEach(l => {
     if (!BYID.has(l.source) || !BYID.has(l.target) || l.source === l.target) return;
@@ -310,7 +331,11 @@ function sporeSrc(p) {
   const k = p.id; if (!urlCache.has(k) || !artCache.has(p.id + ":256")) urlCache.set(k, sporeCanvas(p, 256).toDataURL("image/png"));
   return urlCache.get(k);
 }
-const sporeImg = (p, cls = "") => `<img class="spore-img ${cls}" src="${esc(sporeSrc(p))}" alt="" draggable="false">`;
+const sporeImg = (p, cls = "", live = false) => {
+  const img = `<img class="spore-img ${live && p._motion ? "" : cls}" src="${esc(sporeSrc(p))}" alt="" draggable="false">`;
+  // live: 3D 모션이 이어진 글이면 3D 포자로(그림은 불러오기 전까지 자리 지킴) — 아래 hydrate가 화면에 붙은 걸 찾아 살려요
+  return live && p._motion && hasGL ? `<span class="s3p ${cls}" data-motion="${esc(p.id)}">${img}</span>` : img;
+};
 
 /* ===================== network (리좀) — 같은 배치를 메인 미리보기와 리좀 페이지가 함께 씀 ===================== */
 // node ids: "c:<concept>" and "p:<post id>"
@@ -507,9 +532,12 @@ function spore3d(host, o = {}) {
 // hit test: is the pointer on the spore itself (not just its square)?
 function sporeAt(x, y, target) {
   // links/buttons on top win — except big see-through areas marked data-spore-through (e.g. the rhizome preview link)
-  const hit = target && target.closest && target.closest("a,button,input,textarea,select,label,[data-read],#reader,#about,#nav,.fb,.cn");
-  if (hit && !hit.hasAttribute("data-spore-through")) return null;
+  const hit = target && target.closest && target.closest("a,button,input,textarea,select,label,[data-read],.fb,.cn");
+  const panel = target && target.closest && target.closest("#reader,#about,#nav,#panel");
   for (const S of spores3d) {
+    if (!S.mv || !S.host.isConnected) continue;
+    if (hit && !hit.hasAttribute("data-spore-through") && !hit.contains(S.host)) continue;   // a spore inside a button still turns
+    if (panel && !panel.contains(S.host)) continue;
     const r = S.mv.getBoundingClientRect();
     if (!S.host.classList.contains("on") || x < r.left || x > r.right || y < r.top || y > r.bottom) continue;
     try { if (S.mv.positionAndNormalFromPoint(x, y)) return S; } catch {}
@@ -578,6 +606,16 @@ function spore3dEvents() {
   setTimeout(() => clearInterval(watch), 20000);
 }
 spore3dEvents();
+// 3D 모션이 이어진 글의 자리(.s3p[data-motion])가 화면에 붙으면 그때 3D 포자를 살려요. 사라진 자리는 목록에서 정리.
+function hydrate3d() {
+  for (let i = spores3d.length - 1; i >= 0; i--) if (!spores3d[i].host.isConnected) spores3d.splice(i, 1);
+  document.querySelectorAll(".s3p[data-motion]:not(.live)").forEach(h => {
+    const p = BYID && BYID.get(h.dataset.motion); if (!p || !p._motion) return;
+    h.classList.add("live"); spore3d(h, { ...p._motion });
+  });
+}
+let hydRaf = 0;
+new MutationObserver(() => { if (!hydRaf) hydRaf = requestAnimationFrame(() => { hydRaf = 0; hydrate3d(); }); }).observe(document.documentElement, { childList: true, subtree: true });
 
 /* ===================== nav ===================== */
 let navActive = "";
@@ -614,7 +652,7 @@ function openReader(id, opts = {}) {
   reader.innerHTML = `
     <div class="r-top"><span class="mono">${esc(t("article"))} / ${no(p)}</span><button class="pill-btn ghost" data-sp="close-reader">${esc(t("close"))} ×</button></div>
     <div class="r-body">
-      <div class="r-head">${sporeImg(p, "r-spore")}<div>
+      <div class="r-head">${sporeImg(p, "r-spore", true)}<div>
         <h2>${esc(titleOf(p))}</h2>${altTitleOf(p) ? `<p class="r-alt">${esc(altTitleOf(p))}</p>` : ""}
         <p class="r-meta mono"><i class="dot" style="background:${TOPICS[p._topic].color}"></i>${esc(tp[0])}${c ? " · " + esc(catName(c)) : ""} · ${min} ${esc(t("min"))} · ${p._chars.toLocaleString()} ${esc(t("chars"))}${p.date ? " · " + esc(fmtDate(p.date)) : ""}</p>
       </div></div>
