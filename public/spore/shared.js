@@ -13,7 +13,7 @@ const TEXT = {
     title: ["SOFT", "INVASION"], titleFlat: "Soft Invasion",
     subtitle: "Scattering without a sound, multiplying, connecting.",
     navSpores: "Spores", navRhizome: "Rhizome", navArchive: "Archive", navAbout: "About",
-    spores: "spores", hyphae: "hyphae", scroll: "Scroll",
+    spores: "spores", hyphae: "hyphae", scroll: "Scroll to zoom",
     specimensTitle: "SPECIMENS", specimensLead: "Every spore is one article. Its color and skin come from what the article is about; its shape from how it is written.",
     noneYet: "None yet", secondary: "secondary",
     rhizomeTitle: "RHIZOME", rhizomeLead: "Spores grow hyphae toward the concepts they share. This is a still from the living map.",
@@ -37,7 +37,7 @@ const TEXT = {
     title: ["부드러운", "침범"], titleFlat: "부드러운 침범",
     subtitle: "소리없이 흩어지고 번식하며 연결되기",
     navSpores: "포자", navRhizome: "리좀", navArchive: "아카이브", navAbout: "소개",
-    spores: "포자", hyphae: "균사", scroll: "스크롤",
+    spores: "포자", hyphae: "균사", scroll: "스크롤로 확대 · 축소",
     specimensTitle: "포자 분류", specimensLead: "포자 하나가 글 한 편이에요. 색과 표면은 글이 다루는 의제에서, 형태는 글이 쓰인 방식에서 나와요.",
     noneYet: "아직 없음", secondary: "보조",
     rhizomeTitle: "리좀", rhizomeLead: "포자들은 같은 개념을 향해 균사를 뻗어요. 살아 있는 지도의 한 장면이에요.",
@@ -212,6 +212,43 @@ const MOTION_LOOK = [   // 순서대로 쓰이는 색조(deg)·회전 속도(deg
   { hue: 150, speed: 10, theta: 300, tilt: 60 }, { hue: 45, speed: 18, theta: 200, tilt: 84 }, { hue: 270, speed: 14, theta: 80, tilt: 70 }, { hue: -90, speed: 22, theta: 160, tilt: 96 }
 ];
 const MOTION_PICK = {};
+// 3D 포자를 글마다 다르게: 의제 색으로 재질을 물들이고, 유형에 따라 몸의 비율을 늘이거나 눌러요
+const hueOf = ([r, g, b]) => { const M = Math.max(r, g, b), m = Math.min(r, g, b), d = M - m; if (!d) return 330;
+  const h = M === r ? ((g - b) / d) % 6 : M === g ? (b - r) / d + 2 : (r - g) / d + 4; return (h * 60 + 360) % 360; };
+const TYPE_STRETCH = {
+  exhibition_review: [1.22, .84, 1.05], casual_fragment: [.92, .92, .92], research_note: [.96, 1.04, .96], experiential_essay: [1.06, .94, 1.14],
+  observation_guide: [.86, 1.2, .9], collection_comparison: [1.12, 1.12, 1.12], conceptual_essay: [1.2, 1.02, .8], critical_research: [1, 1.12, 1.08]
+};
+
+/* 어드민에서 아직 포자 속성을 고르지 않은 글: 제목·태그·본문의 낱말로 의제와 유형을 짐작해 임시 속성을 붙여요.
+   (어드민에서 고르면 그쪽이 이겨요.) 같은 글은 언제나 같은 결과. */
+const TOPIC_WORDS = {
+  experience_place: ["관람", "장소", "공간", "산책", "여행", "파리", "현장", "도시", "건축", "동선", "주말", "place", "site"],
+  memory_time: ["기억", "기록", "시간", "역사", "아카이브", "도록", "흔적", "인생", "과거", "추억", "남기", "굿즈", "memory", "archive", "time"],
+  media_technology: ["기술", "컴퓨터", "매체", "미디어", "디지털", "영상", "영화", "데이터", "기계", "직조", "물질", "사운드", "인류세", "technology", "media", "film"],
+  body_relation: ["몸", "신체", "관계", "여성", "공존", "돌봄", "함께", "타자", "연대", "혼자", "alone", "together", "body"],
+  institution_critique: ["제도", "비평", "권력", "정치", "자본", "시장", "국가", "미니멀리즘", "질문", "작가상", "수상", "미술계", "critique", "institution"]
+};
+function autoSpore(p) {
+  const head = `${p.title} ${p.titleEn || ""} ${(p.tags || []).join(" ")}`.toLowerCase(), body = plain(p.body).toLowerCase();
+  const count = (s, w) => s.split(w).length - 1;
+  const R = rnd("auto_" + p.id);
+  const score = Object.entries(TOPIC_WORDS).map(([k, ws]) => [k, ws.reduce((n, w) => n + count(head, w) * 6 + Math.min(12, count(body, w)), 0) + R() * .5]).sort((a, b) => b[1] - a[1]);
+  const [t1, t2] = score, chars = p._chars;
+  const title = String(p.title || "");
+  const contentType = chars < 300 ? "casual_fragment"
+    : /하우투|가이드|방법|how ?to/i.test(title) ? "observation_guide"
+    : /세미나|스터디|강의|아카데미/.test(head) ? "research_note"
+    : /(들['’]?\s*$|들['’]|모음|목록)/.test(title) ? "collection_comparison"
+    : /비평|연구|인류세|미니멀리즘|특정성/.test(head) ? "critical_research"
+    : /질문|개념|철학|alone|better/i.test(head) ? "conceptual_essay"
+    : chars >= 5000 ? "experiential_essay" : "exhibition_review";
+  return {
+    image: null, auto: true, contentType, primaryTopic: t1[0], secondaryTopic: t2[1] >= t1[1] * .45 && t2[1] > 1 ? t2[0] : null,
+    complexity: chars >= 9000 ? 5 : chars >= 6000 ? 4 : chars >= 1500 ? 3 : chars >= 300 ? 2 : 1,
+    symmetry: 2 + Math.floor(R() * 3), seed: "article_" + p.id
+  };
+}
 function index() {
   CATS = new Map((DATA.categories || []).map(c => [c.id, c]));
   POSTS = (DATA.nodes || []).filter(p => p && p.title);
@@ -220,6 +257,7 @@ function index() {
   byDate.forEach((p, i) => { p._no = i + 1; });
   POSTS.forEach(p => {
     p._chars = plain(p.body).length;
+    if (!p.spore || !p.spore.primaryTopic) { const a = autoSpore(p), s = p.spore || {}; p.spore = { ...a, ...s, primaryTopic: a.primaryTopic, secondaryTopic: s.secondaryTopic || a.secondaryTopic, contentType: s.contentType || a.contentType }; }
     const c = CATS.get(p.category);
     p._concepts = [...new Set([...(c && c.name ? [c.name] : []), ...(p.tags || []).map(String).filter(Boolean)])];
     p._topic = p.spore && TOPICS[p.spore.primaryTopic] ? p.spore.primaryTopic : "unclassified";
@@ -231,8 +269,13 @@ function index() {
   // 3D 모션 잇기: 4~5단계 글, 글 번호 순서
   POSTS.forEach(p => { p._motion = null; });
   POSTS.filter(p => p._tier >= MOTION_TIER).sort((a, b) => a._no - b._no).forEach((p, i) => {
-    const m = MOTIONS[MOTION_PICK[p.id] ?? i % MOTIONS.length];
-    p._motion = { ...MOTION_LOOK[i % MOTION_LOOK.length], name: m.name, src: m.src, mobileSrc: MOTIONS[3].src };
+    const m = MOTIONS[MOTION_PICK[p.id] ?? i % MOTIONS.length], R = rnd("motion_" + p.id), T = TOPICS[p._topic];
+    const look = MOTION_LOOK[i % MOTION_LOOK.length];
+    // 원본 모델은 분홍빛(색상각 약 330°) — 의제 색의 색상각으로 돌려서 물들여요
+    p._motion = { speed: look.speed, theta: Math.round(R() * 360), tilt: look.tilt, hue: Math.round(hueOf(rgb(T.color)) - 330 + (R() - .5) * 24),
+      tint: mix(rgb(T.color), [255, 255, 255], .55).map(v => +(v / 255).toFixed(3)),
+      glow: (p._topic2 ? rgb(TOPICS[p._topic2].color) : rgb(T.tint)).map(v => +(v / 255 * .16).toFixed(3)),
+      stretch: TYPE_STRETCH[p.spore.contentType] || [1, 1, 1], name: m.name, src: m.src, mobileSrc: MOTIONS[3].src };
   });
   const seen = new Set(); LINKS = [];
   (DATA.links || []).forEach(l => {
@@ -523,8 +566,16 @@ function spore3d(host, o = {}) {
     mv.setAttribute("camera-orbit", `${S.theta}deg ${S.tilt}deg auto`);
     mv.setAttribute("rotation-per-second", `${S.spin}deg`); mv.setAttribute("auto-rotate-delay", "0");
     if (!REDUCE) mv.setAttribute("auto-rotate", "");
-    if (o.hue) mv.style.filter = `hue-rotate(${o.hue}deg) saturate(1.1)`;
-    mv.addEventListener("load", () => host.classList.add("on"), { once: true });
+    if (o.hue) mv.style.filter = `hue-rotate(${o.hue}deg) saturate(${o.tint ? 1.35 : 1.1})`;
+    if (o.stretch) mv.setAttribute("scale", o.stretch.join(" "));
+    mv.addEventListener("load", () => {
+      // 글마다 다른 몸: 재질 색을 의제 색으로 물들이고 살짝 빛나게
+      if (o.tint || o.glow) try { mv.model.materials.forEach(m => {
+        if (o.tint) m.pbrMetallicRoughness.setBaseColorFactor([...o.tint, 1]);
+        if (o.glow && m.setEmissiveFactor) m.setEmissiveFactor(o.glow);
+      }); } catch {}
+      host.classList.add("on");
+    }, { once: true });
     host.appendChild(mv); S.mv = mv; spores3d.push(S);
   }).catch(() => {});
   return S;
@@ -626,9 +677,8 @@ function renderNav(active) {
   el.innerHTML = `
     <a class="brand" href="${home}"><span class="brand-mark" aria-hidden="true"></span><span>${esc(t("titleFlat"))}</span></a>
     <nav class="links" aria-label="Main">
-      <a href="${home}#specimens" ${navActive === "spores" ? 'aria-current="page"' : ""}>${esc(t("navSpores"))}</a>
+      <a href="${home}" ${navActive === "spores" ? 'aria-current="page"' : ""}>${esc(t("navSpores"))}</a>
       <a href="/spore/rhizome/" ${navActive === "rhizome" ? 'aria-current="page"' : ""}>${esc(t("navRhizome"))}</a>
-      <a href="${home}#archive">${esc(t("navArchive"))}</a>
       <button type="button" data-sp="about">${esc(t("navAbout"))}</button>
     </nav>
     <div class="lang" role="group" aria-label="Language">
