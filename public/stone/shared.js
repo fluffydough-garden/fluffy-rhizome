@@ -1,4 +1,4 @@
-/* 이상한 돌 · Strange Stones — 돌무더기(/stone/)와 리좀(/stone/rhizome/)이 함께 쓰는 코드
+/* 부드러운 지층 · Soft Strata — 돌무더기(/stone/)와 리좀(/stone/rhizome/)이 함께 쓰는 코드
    데이터 불러오기 · 한/영 문구 · 글마다 돌 정하기 · 마우스 궤적 · 글 읽기 패널 · 네트워크 배치 · 마크다운
    3D(돌 모델·물리·그리기)는 /stone/stones.js */
 (() => {
@@ -11,13 +11,13 @@
    ============================================================================ */
 const TEXT = {
   en: {
-    title: ["STRANGE", "STONES"], titleFlat: "Strange Stones",
-    subtitle: "Stones drifting in space, piling up, tied by threads.",
+    title: ["SOFT", "STRATA"], titleFlat: "Soft Strata",
+    subtitle: "Relations that overlap, seep in, and grow in the gaps of time.",
     navStones: "Stones", navRhizome: "Rhizome", navAbout: "About",
     pileHint: "Hover a stone to rattle it · click to pick it up",
     pickedUp: "Picked up", putBack: "Put it back",
     close: "Close", article: "Stone", chars: "chars", min: "min", viewInRhizome: "View in the rhizome", linked: "Stones on the same thread",
-    aboutTitle: "Strange Stones", aboutBody: "A webzine of stones floating in space. Each article is one stone; shared concepts are stars, and threads tie stones to the stars and to each other, without hierarchy.",
+    aboutTitle: "Soft Strata", aboutBody: "A webzine of stones floating in space. Each article is one stone; shared concepts are stars, and threads tie stones to the stars and to each other, without hierarchy.",
     dataLive: n => `${n} published articles from the admin. Saved changes appear within a minute or two.`,
     dataCache: n => `Could not reach the server — showing the last ${n} articles saved in this browser.`,
     dataSample: "Could not load published articles — showing sample articles.", dataEmpty: "No published articles yet.",
@@ -31,13 +31,13 @@ const TEXT = {
     legend: [["Stone", "an article — bigger when longer, glassy when very long"], ["Star", "a concept the articles share (tags · category)"], ["Thread", "a link between star and stone, or stone and stone"], ["Constellation", "the stones around a chosen star; choose several and shared stones glow"], ["Orbit", "the path you have read, shown in ‘My orbit’"]]
   },
   ko: {
-    title: ["이상한", "돌"], titleFlat: "이상한 돌",
-    subtitle: "우주에 떠 있는 돌, 쌓이고, 실로 이어지기",
+    title: ["부드러운", "지층"], titleFlat: "부드러운 지층",
+    subtitle: "겹쳐지고 침투하며 시간의 틈에서 자라나는 관계들",
     navStones: "돌", navRhizome: "리좀", navAbout: "소개",
     pileHint: "돌에 마우스를 올리면 덜걱거려요 · 누르면 집어 들어요",
     pickedUp: "집어 든 돌", putBack: "내려놓기",
     close: "닫기", article: "Stone", chars: "자", min: "분", viewInRhizome: "리좀에서 보기", linked: "같은 실에 꿰인 돌",
-    aboutTitle: "이상한 돌", aboutBody: "우주에 떠 있는 돌들의 웹진이에요. 글 하나가 돌 하나이고, 같은 개념은 별이 되어, 실이 위계 없이 별과 돌, 돌과 돌을 이어요.",
+    aboutTitle: "부드러운 지층", aboutBody: "우주에 떠 있는 돌들의 웹진이에요. 글 하나가 돌 하나이고, 같은 개념은 별이 되어, 실이 위계 없이 별과 돌, 돌과 돌을 이어요.",
     dataLive: n => `어드민에서 발행한 글 ${n}편이에요. 저장하면 1~2분 안에 반영돼요.`,
     dataCache: n => `서버에 연결하지 못해 이 브라우저에 저장된 글 ${n}편을 보여줘요.`,
     dataSample: "발행된 글을 불러오지 못해 예시 글을 보여줘요.", dataEmpty: "아직 발행된 글이 없어요.",

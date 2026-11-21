@@ -1,4 +1,4 @@
-/* 이상한 돌 · Strange Stones — 3D 돌 (three.js)
+/* 부드러운 지층 · Soft Strata — 3D 돌 (three.js)
    - load(stone)      : 돌 모양 하나를 불러와 크기 1(가장 긴 변)로 맞춘 원본 + 물리용 외곽 점들
    - makeStone(stone) : 글 하나의 돌(재질: 광택 돌 또는 유리질 보석). group > body(덜걱거림) > mesh
    - Rattle           : 마우스를 올리면 덜걱거리며 살짝 떠오르고, 떼면 툭 내려앉는 움직임
@@ -74,6 +74,19 @@ export async function makeStone(stone) {
   body.add(hit);
   group.userData = { stone, shape: S, body, hit, mats, rattle: new Rattle(stone.seed) };
   return group;
+}
+/* 포커스: v < 0 이면 어둡게 가라앉고(-1 = 가장 어둡게), v > 0 이면 밝게 떠올라요(1 = 가장 밝게). 0 = 원래대로 */
+export const FOCUS = { dim: .72, lift: .35 };   // 가라앉을 때 줄이는 밝기 비율 · 떠오를 때 더하는 밝기 비율
+export function setLight(group, v) {
+  const { mats } = group.userData;
+  if (group.userData.light === v) return; group.userData.light = v;
+  const k = v < 0 ? 1 + v * FOCUS.dim : 1 + v * FOCUS.lift;
+  mats.forEach(m => {
+    if (!m.userData.c0) m.userData.c0 = { c: m.color.clone(), e: m.emissiveIntensity ?? 1 };
+    m.color.copy(m.userData.c0.c).multiplyScalar(k);
+    m.envMapIntensity = k;
+    if (m.emissiveIntensity !== undefined) m.emissiveIntensity = m.userData.c0.e * Math.max(k, .2);
+  });
 }
 export function setOpacity(group, a) {
   const { mats } = group.userData;
@@ -189,6 +202,8 @@ export function overlay(canvas, items) {
       if (!REDUCE) { g.rotation.y += dt * st.spin * (1 - R.lift * .85); g.rotation.x = .35 + Math.sin(now / 1000 * st.spin * .7 + st.seed * 6) * .25; }
       else if (!u.r0) { u.r0 = 1; g.rotation.set(.35, st.seed * 6.28, 0); }
       R.apply(u.body, 1);
+      u.lv = (u.lv || 0) + ((it.light || 0) - (u.lv || 0)) * (1 - Math.exp(-dt * 8));
+      setLight(g, Math.abs(u.lv) < .002 ? 0 : +u.lv.toFixed(3));
       setOpacity(g, (it.alpha ?? 1) * e);
     });
     live.forEach((g, id) => { if (!seen.has(id)) { scene.remove(g); live.delete(id); } });
