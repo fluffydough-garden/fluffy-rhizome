@@ -82,7 +82,13 @@ p{margin:0}
 .fb .card img{display:block;width:100%;aspect-ratio:3/2;object-fit:cover;margin:-14px -16px 12px;width:calc(100% + 32px);border-radius:2px 18px 0 0;filter:saturate(.75)}
 .fb .card .more{margin-top:10px;color:var(--link)}
 .fb:hover,.fb:focus-within,.fb.peek{z-index:10}
-.fb:hover .card,.fb:focus-within .card,.fb.peek .card{transform:none;opacity:1}
+.fb:hover .card,.fb:focus-within .card,.fb.peek .card{transform:none;opacity:1;pointer-events:auto}
+/* near the right / top edge the card grows the other way so it stays on screen */
+.fb.fx .card{left:auto;right:calc(var(--cs) / 2 + 6px);transform-origin:100% 100%;border-radius:18px 2px 18px 18px}
+.fb.fy .card{bottom:auto;top:-12px;transform-origin:0 0;border-radius:2px 18px 18px 18px}
+.fb.fx.fy .card{transform-origin:100% 0;border-radius:18px 2px 18px 18px}
+/* the cap + title are the hover target too, so the card can be reached and clicked */
+.fb .cap,.fb .t{cursor:pointer}
 .fb:hover .t,.fb:focus-within .t,.fb.peek .t{opacity:0}
 .fb:hover .cap,.fb.near .cap,.fb.focus .cap{transform:scale(1.35)}
 .fb.near .t,.fb.focus .t{max-width:280px}
@@ -591,7 +597,7 @@ function fruit(n) {
   const p = n.post, body = plain(p.body), short = body.length <= 180;
   const R = rnd("cap" + p.id), br = `${40 + R() * 30}% ${40 + R() * 30}% ${40 + R() * 30}% ${40 + R() * 30}% / ${40 + R() * 30}% ${40 + R() * 30}% ${40 + R() * 30}% ${40 + R() * 30}%`;
   const ex = short ? body : (p.summary || body.slice(0, 110) + "…");
-  return `<div class="fb tier-${n.tier}" data-node="${esc(n.id)}" data-tier="${n.tier}" data-chars="${n.chars}" style="--br:${br};--cs:${TIER_SIZE[n.tier]}px">
+  return `<div class="fb tier-${n.tier}" data-post="${esc(p.id)}" data-node="${esc(n.id)}" data-tier="${n.tier}" data-chars="${n.chars}" style="--br:${br};--cs:${TIER_SIZE[n.tier]}px">
     <span class="cap"></span><span class="t">${esc(p.title)}</span>
     <button class="card" data-post="${esc(p.id)}" aria-label="${esc(p.title)} 읽기">
       ${p.image ? `<img src="${esc(p.image)}" alt="" loading="lazy">` : ""}
@@ -764,6 +770,13 @@ document.addEventListener("click", e => {
     case "refresh": refresh(true); break;
     case "clear-trail": trail = []; saveTrail(); closeInfo(); applyClasses(); drawMyc(); toast("나의 균사를 지웠어요"); break;
   }
+});
+// before a card grows, choose the side with room for it
+labels.addEventListener("pointerover", e => {
+  const fb = e.target.closest(".fb"); if (!fb || fb.contains(e.relatedTarget)) return;
+  const r = fb.querySelector(".cap").getBoundingClientRect(), card = fb.querySelector(".card");
+  fb.classList.toggle("fx", r.right + card.offsetWidth + 24 > W - panelW());
+  fb.classList.toggle("fy", r.top - card.offsetHeight < 70);
 });
 // a click on bare substrate lets the colonies go dormant
 let down = null;
