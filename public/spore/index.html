@@ -35,6 +35,15 @@ html.ko .hero-title{font-family:var(--f-ko-display);font-size:clamp(64px,15.5vw,
 .hero-sub{justify-self:end;max-width:300px;font-size:16px;line-height:1.45}
 html.ko .hero-sub{font-family:var(--f-head);font-size:17px}
 @media (max-width:720px){.hero-foot{grid-template-columns:1fr;justify-items:start}.scroll-cue{display:none}.hero-sub{justify-self:start}}
+/* the mother spore: a 3D model (Higgsfield · Meshy) turning slowly behind the title */
+.mother{position:absolute;z-index:1;left:50%;top:47%;width:min(78vh,82vw);aspect-ratio:1;translate:-50% -50%;pointer-events:none;opacity:0;scale:.86;
+  transition:opacity 1.6s ease,scale 2.4s cubic-bezier(.2,.8,.2,1)}
+.mother.on{opacity:1;scale:1}
+.mother-float{width:100%;height:100%;animation:breathe 9s ease-in-out infinite alternate}
+@keyframes breathe{from{transform:translateY(-10px) scale(.985)}to{transform:translateY(12px) scale(1.02)}}
+.mother model-viewer{width:100%;height:100%;background:transparent;--poster-color:transparent;--progress-bar-height:0;filter:drop-shadow(0 40px 60px rgba(60,50,120,.22)) saturate(1.05)}
+.mother::before{content:"";position:absolute;inset:12%;border-radius:50%;background:radial-gradient(circle,rgba(255,236,244,.75),rgba(214,206,240,0) 68%);filter:blur(30px);z-index:-1}
+@media (max-width:720px){.mother{top:44%;width:min(96vw,60vh)}}
 
 /* ---------- shared section bits ---------- */
 .sec{position:relative;padding:clamp(80px,14vh,160px) var(--pad) 40px}
@@ -104,6 +113,7 @@ html.ko .big{font-family:var(--f-ko-display);letter-spacing:-.04em;line-height:1
 <main>
   <section class="hero" id="top" aria-labelledby="hero-title">
     <div class="field back" id="field-back"></div>
+    <div class="mother" id="mother" aria-hidden="true"><div class="mother-float" id="mother-float"></div></div>
     <h1 class="hero-title" id="hero-title"></h1>
     <div class="field front" id="field-front"></div>
     <div class="hero-foot">
@@ -179,7 +189,38 @@ if (!REDUCE) addEventListener("pointermove", e => {
   const dx = e.clientX / innerWidth - .5, dy = e.clientY / innerHeight - .5;
   $("#field-back").style.transform = `translate(${dx * -10}px,${dy * -8}px)`;
   $("#field-front").style.transform = `translate(${dx * 22}px,${dy * 16}px)`;
+  if (mv) mv.cameraOrbit = `${dx * 24}deg ${78 + dy * 14}deg auto`;   // the mother spore leans toward the pointer
 }, { passive: true });
+
+/* the mother spore: model-viewer is loaded only when WebGL is there, and the model fades in once it has loaded.
+   SpinLoop is a 6s turn baked into the GLB; played at .45 speed it is a slow ~13s turn. */
+let mv = null;
+(function motherSpore() {
+  const gl = (() => { try { const c = document.createElement("canvas"); return !!(c.getContext("webgl2") || c.getContext("webgl")); } catch { return false; } })();
+  if (!gl) return;
+  const s = document.createElement("script");
+  s.type = "module"; s.src = "https://cdn.jsdelivr.net/npm/@google/model-viewer@4.0.0/dist/model-viewer.min.js";
+  s.onload = () => {
+    mv = document.createElement("model-viewer");
+    mv.setAttribute("src", "/spore/media/spore-spin.glb");
+    mv.setAttribute("alt", "");
+    mv.setAttribute("environment-image", "neutral");
+    mv.setAttribute("exposure", "1.15");
+    mv.setAttribute("shadow-intensity", "0");
+    mv.setAttribute("interaction-prompt", "none");
+    mv.setAttribute("camera-orbit", "0deg 78deg auto");
+    mv.setAttribute("field-of-view", "28deg");
+    mv.setAttribute("interpolation-decay", "220");
+    mv.setAttribute("disable-zoom", "");
+    mv.setAttribute("tabindex", "-1");
+    if (!REDUCE) { mv.setAttribute("autoplay", ""); mv.setAttribute("animation-name", "SpinLoop"); }
+    mv.addEventListener("load", () => { mv.timeScale = .45; $("#mother").classList.add("on"); }, { once: true });
+    $("#mother-float").appendChild(mv);
+    // stop rendering while the hero is off screen
+    new IntersectionObserver(([e]) => { if (REDUCE) return; e.isIntersecting ? mv.play() : mv.pause(); }).observe($("#mother"));
+  };
+  document.head.appendChild(s);
+})();
 
 /* ---------- 2. specimens ---------- */
 function renderSpecimens() {

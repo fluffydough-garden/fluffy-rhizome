@@ -361,10 +361,10 @@ function grow(G) {
     nd.fil = Array.from({ length: m }, () => filament(R, nd.x, nd.y, R() * 6.28, 14 + R() * (nd.type === "c" ? 46 : 26), 8)); });
 }
 
-/* ===================== mouse trace: 지난 10초의 궤적이 포자처럼 번져요 ===================== */
-const TRACE_MS = 10000;
+/* ===================== mouse trace: 지난 2초의 궤적이 포자처럼 번져요 ===================== */
+const TRACE_MS = 2000;
 const trace = { pts: [], cv: null, ctx: null, raf: 0, last: null, W: 0, H: 0, dpr: 1 };
-const TRACE_COLORS = Object.values(TOPICS).map(x => rgb(x.color));
+const TRACE_LINE = 2, TRACE_HAZE = 12;   // 궤적 선 굵기(px), 선 둘레의 투명한 흰 번짐 폭(px)
 function traceInit() {
   if (REDUCE || trace.cv) return;
   const cv = document.createElement("canvas"); cv.id = "trace"; cv.setAttribute("aria-hidden", "true");
@@ -385,25 +385,34 @@ function traceLoop() {
   const now = performance.now(), g = trace.ctx, pts = trace.pts;
   while (pts.length && now - pts[0].t > TRACE_MS) pts.shift();
   g.setTransform(trace.dpr, 0, 0, trace.dpr, 0, 0); g.clearRect(0, 0, trace.W, trace.H);
-  // the hypha the cursor drew
-  for (let i = 1; i < pts.length; i++) {
-    const a = pts[i - 1], b = pts[i]; if (b.t - a.t > 400) continue;
-    const age = (now - b.t) / TRACE_MS;
-    g.strokeStyle = `rgba(30,34,60,${(1 - age) * .28})`; g.lineWidth = 1;
-    g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke();
+  // the hypha the cursor drew: a 4px white line that thins out to transparent toward its old end,
+  // over a wide, faint white haze (the transparent gradient)
+  g.lineCap = "round"; g.lineJoin = "round";
+  for (const [w, k] of [[TRACE_HAZE, .16], [TRACE_LINE, .95]]) {
+    g.lineWidth = w;
+    for (let i = 1; i < pts.length; i++) {
+      const a = pts[i - 1], b = pts[i]; if (b.t - a.t > 400) continue;
+      const fa = Math.pow(1 - (now - a.t) / TRACE_MS, 1.6), fb = Math.pow(1 - (now - b.t) / TRACE_MS, 1.6);
+      const grad = g.createLinearGradient(a.x, a.y, b.x, b.y);
+      grad.addColorStop(0, `rgba(255,255,255,${fa * k})`); grad.addColorStop(1, `rgba(255,255,255,${fb * k})`);
+      g.strokeStyle = grad; g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke();
+    }
   }
-  // spores multiplying along it: they drift outward and bud as they age
+  // spores multiplying along it: white dots with a soft transparent halo, drifting outward as they age
+  g.lineCap = "butt";
   for (const p of pts) {
     const age = (now - p.t) / TRACE_MS, fade = Math.pow(1 - age, 1.4); let x = p.s;
     const r = () => { x ^= x << 13; x ^= x >>> 17; x ^= x << 5; return ((x >>> 0) % 1000) / 1000; };
     const n = 2 + (p.s % 3) + Math.floor(age * 3);
     for (let j = 0; j < n; j++) {
-      const ang = r() * 6.28, dist = 3 + Math.pow(age, .7) * (18 + r() * 38), rad = (.8 + r() * 2) * (1 + age * .7);
-      const c = TRACE_COLORS[Math.floor(r() * TRACE_COLORS.length)];
+      const ang = r() * 6.28, dist = 4 + Math.pow(age, .7) * (18 + r() * 38), rad = (1.2 + r() * 2.2) * (1 + age * .7);
       const sx = p.x + Math.cos(ang) * dist, sy = p.y + Math.sin(ang) * dist + age * 6;
-      g.fillStyle = `rgba(${c[0] - 40},${c[1] - 40},${c[2] - 30},${fade * .75})`;
+      if (j === 0 && age > .2) { g.strokeStyle = `rgba(255,255,255,${fade * .5})`; g.lineWidth = 1; g.beginPath(); g.moveTo(p.x, p.y); g.lineTo(sx, sy); g.stroke(); }
+      const halo = g.createRadialGradient(sx, sy, 0, sx, sy, rad * 3.2);
+      halo.addColorStop(0, `rgba(255,255,255,${fade * .45})`); halo.addColorStop(1, "rgba(255,255,255,0)");
+      g.fillStyle = halo; g.beginPath(); g.arc(sx, sy, rad * 3.2, 0, 6.29); g.fill();
+      g.fillStyle = `rgba(255,255,255,${fade * .95})`;
       g.beginPath(); g.arc(sx, sy, rad, 0, 6.29); g.fill();
-      if (j === 0 && age > .2) { g.strokeStyle = `rgba(30,34,60,${fade * .22})`; g.lineWidth = .7; g.beginPath(); g.moveTo(p.x, p.y); g.lineTo(sx, sy); g.stroke(); }
     }
   }
   if (pts.length) trace.raf = requestAnimationFrame(traceLoop);
