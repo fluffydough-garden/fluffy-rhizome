@@ -3,3 +3,4 @@ node_modules
 ADMIN_PASSWORD.txt
 .claude
 scripts
+SPORE_TOKEN.txt

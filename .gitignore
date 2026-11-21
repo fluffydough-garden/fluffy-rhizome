@@ -2,3 +2,4 @@ node_modules
 .vercel
 .env*
 ADMIN_PASSWORD.txt
+SPORE_TOKEN.txt
