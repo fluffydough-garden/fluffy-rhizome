@@ -53,7 +53,9 @@ html.ko .brand{font-family:var(--f-head);text-transform:none;font-size:16px}
 .links{margin-left:auto;display:flex;gap:clamp(16px,3vw,56px);align-items:center}
 .links a,.links button{font-family:var(--f-mono);font-size:13px;letter-spacing:.06em;text-transform:uppercase;text-decoration:none;padding:6px 0;border-bottom:1px solid transparent}
 html.ko .links a,html.ko .links button{font-family:var(--f-head);letter-spacing:0;font-size:14px}
-.links a:hover,.links button:hover,.links [aria-current]{border-bottom-color:currentColor}
+.links a:hover,.links button:hover{border-bottom-color:currentColor}
+.links a{position:relative}
+.nav-ind{position:absolute;left:0;right:0;bottom:-1px;height:1px;background:currentColor;view-transition-name:nav-ind}
 .lang{display:flex;border:1px solid var(--rule);border-radius:999px;overflow:hidden}
 .lang button{font-family:var(--f-mono);font-size:11px;padding:4px 10px;letter-spacing:.06em}
 .lang button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
@@ -181,7 +183,19 @@ html.spore-drag,html.spore-drag *{user-select:none;-webkit-user-select:none}
 .s3p{position:relative;display:block;width:100%;height:100%}
 .s3p>.spore-img{transition:opacity .6s ease}
 .s3p model-viewer{position:absolute;inset:-6%;width:112%;height:112%;opacity:0;transition:opacity .9s ease}
-.s3p.on>.spore-img{opacity:0}
+.s3p.on>.spore-img{opacity:0;visibility:hidden;transition:opacity .6s ease,visibility 0s .6s}
 .s3p.on model-viewer{opacity:1}
 .r-head .s3p.r-spore{width:150px;height:150px;flex:none;margin:-14px -10px 0 -16px}
 @media (max-width:720px){.r-head .s3p.r-spore{width:104px;height:104px}}
+
+/* ---------- 페이지 전환 (대문 ↔ 리좀): 페이드 아웃 → 페이드 인, 탭 밑줄은 미끄러져 옮겨 가요 ---------- */
+@view-transition{navigation:auto}
+#nav{view-transition-name:nav}
+::view-transition-old(root){animation:pg-out .5s cubic-bezier(.4,0,.2,1) both}
+::view-transition-new(root){animation:pg-in .8s .2s cubic-bezier(.2,.8,.2,1) both}
+::view-transition-group(nav-ind){animation-duration:.7s;animation-timing-function:cubic-bezier(.2,.8,.2,1)}
+@keyframes pg-out{to{opacity:0;filter:blur(6px)}}
+@keyframes pg-in{from{opacity:0;filter:blur(6px)}}
+html.page-out body>*:not(#nav){transition:opacity .5s cubic-bezier(.4,0,.2,1),filter .5s;opacity:0;filter:blur(6px)}
+html.page-in body>*:not(#nav){animation:pg-in .8s cubic-bezier(.2,.8,.2,1) both}
+@media (prefers-reduced-motion:reduce){::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none!important}}

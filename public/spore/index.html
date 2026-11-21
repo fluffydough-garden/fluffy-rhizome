@@ -7,12 +7,11 @@
 <meta name="description" content="Soft Invasion — a webzine that grows like a mycelium.">
 <link rel="stylesheet" href="/spore/shared.css">
 <style>
-/* 한 화면짜리 대문: 모든 포자가 균사로 이어진 리좀. 스크롤은 페이지를 내리지 않고 확대·축소만 해요. */
+/* 한 화면짜리 대문: 모든 포자가 균사로 이어진 리좀. 스크롤하면 페이지를 내리지 않고 리좀 페이지로 넘어가요(페이드). */
 html,body{height:100%;overflow:hidden;overscroll-behavior:none}
 .hero{position:fixed;inset:0;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
-.hero.panning{cursor:grabbing}
 #hy{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
-.hero-title{position:absolute;z-index:2;left:var(--pad);right:var(--pad);top:50%;display:flex;flex-direction:column;pointer-events:none;transform-origin:50% 50%;
+.hero-title{position:absolute;z-index:2;left:var(--pad);right:var(--pad);top:50%;transform:translateY(-54%);display:flex;flex-direction:column;pointer-events:none;
   font-family:var(--f-display);font-weight:400;text-transform:uppercase;font-size:clamp(58px,14.6vw,290px);line-height:.92;letter-spacing:-.045em;will-change:transform,opacity}
 .hero-title span:last-child{align-self:flex-end}
 html.ko .hero-title{font-family:var(--f-ko-display);font-size:clamp(64px,15.5vw,300px);letter-spacing:-.04em;line-height:1}
@@ -20,7 +19,7 @@ html.ko .hero-title{font-family:var(--f-ko-display);font-size:clamp(64px,15.5vw,
 .sp{position:absolute;left:0;top:0;width:var(--s);height:var(--s);margin:calc(var(--s) / -2) 0 0 calc(var(--s) / -2);pointer-events:auto;border-radius:50%;will-change:transform}
 .sp-body{display:block;width:100%;height:100%;animation:bob var(--d) ease-in-out var(--dl) infinite alternate;transition:transform .5s cubic-bezier(.2,.9,.3,1.3)}
 .sp:hover .sp-body,.sp:focus-visible .sp-body{transform:scale(1.14)}
-.sp-body{filter:drop-shadow(0 18px 30px rgba(0,0,0,.55))}
+.sp-body>.spore-img{filter:drop-shadow(0 18px 30px rgba(0,0,0,.55))}   /* 그림자는 그림 포자에만 — 3D 화면에 필터를 걸면 매 프레임 다시 그려서 버벅여요 */
 @keyframes bob{from{translate:0 -6px}to{translate:0 8px}}
 .sp-lbl{position:absolute;left:50%;top:100%;transform:translate(-50%,4px);width:max-content;max-width:220px;text-align:center;font-size:13px;line-height:1.35;opacity:0;transition:opacity .2s;pointer-events:none;
   background:rgba(14,15,21,.82);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);padding:6px 10px;border-radius:12px}
@@ -30,20 +29,13 @@ html.ko .hero-title{font-family:var(--f-ko-display);font-size:clamp(64px,15.5vw,
 .hero-foot{position:absolute;z-index:4;left:var(--pad);right:var(--pad);bottom:clamp(24px,5vh,56px);display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:24px;pointer-events:none}
 .hero-foot>*{pointer-events:auto}
 .hero-meta{color:var(--ink-2)}
-.zoom-cue{display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--ink-2);background:none;border:0;font:inherit;cursor:pointer}
-.zoom-cue i{width:1px;height:38px;background:linear-gradient(var(--ink),transparent);animation:breath 2.4s ease-in-out infinite}
-.zoom-cue b{font-weight:400;color:var(--muted)}
-@keyframes breath{0%,100%{transform:scaleY(.35)}50%{transform:scaleY(1)}}
+.enter-cue{text-decoration:none;display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--ink-2);background:none;border:0;font:inherit;cursor:pointer}
+.enter-cue i{width:1px;height:38px;background:linear-gradient(var(--ink),transparent);animation:breath 2.4s ease-in-out infinite}
+.enter-cue b{font-weight:400;color:var(--muted)}
+@keyframes breath{0%{transform:scaleY(0);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}51%{transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
 .hero-sub{justify-self:end;max-width:300px;font-size:16px;line-height:1.45}
 html.ko .hero-sub{font-family:var(--f-head);font-size:17px}
 @media (max-width:720px){.hero-foot{grid-template-columns:1fr auto;justify-items:start}.hero-sub{display:none}}
-/* the mother spore: the original Higgsfield model, turning slowly behind everything */
-.mother{position:absolute;z-index:1;left:50%;top:47%;width:min(78vh,82vw);aspect-ratio:1;margin:calc(min(78vh,82vw) / -2) 0 0 calc(min(78vh,82vw) / -2);pointer-events:none;will-change:transform,opacity}
-.mother-float{width:100%;height:100%;animation:breathe 9s ease-in-out infinite alternate}
-@keyframes breathe{from{transform:translateY(-10px) scale(.985)}to{transform:translateY(12px) scale(1.02)}}
-.mother model-viewer{filter:drop-shadow(0 40px 70px rgba(0,0,0,.6)) saturate(1.05)}
-.mother::before{content:"";position:absolute;inset:12%;border-radius:50%;background:radial-gradient(circle,rgba(190,110,220,.28),rgba(60,80,170,0) 68%);filter:blur(30px);z-index:-1}
-@media (max-width:720px){.mother{top:44%;width:min(96vw,60vh);margin:calc(min(96vw,60vh) / -2) 0 0 calc(min(96vw,60vh) / -2)}}
 </style>
 </head>
 <body>
@@ -52,12 +44,11 @@ html.ko .hero-sub{font-family:var(--f-head);font-size:17px}
 <main>
   <section class="hero" id="top" aria-labelledby="hero-title">
     <canvas id="hy" aria-hidden="true"></canvas>
-    <div class="mother" id="mother" aria-hidden="true"><div class="mother-float spore3d" id="mother-float"></div></div>
     <h1 class="hero-title" id="hero-title"></h1>
     <div id="field"></div>
     <div class="hero-foot">
       <p class="mono hero-meta" id="hero-meta"></p>
-      <button type="button" class="zoom-cue mono" id="zoom-cue"><span id="zoom-txt"></span><b id="zoom-pct">100%</b><i aria-hidden="true"></i></button>
+      <a class="enter-cue mono" id="enter-cue" href="/spore/rhizome/"><span id="enter-txt"></span><i aria-hidden="true"></i></a>
       <p class="hero-sub" id="hero-sub"></p>
     </div>
   </section>
@@ -72,7 +63,7 @@ const { t } = SP, { $, esc, rnd, clamp, hash, REDUCE } = SP.util;
 const hero = $("#top"), cv = $("#hy"), g = cv.getContext("2d");
 
 /* ---------- layout: a force-directed rhizome, fitted to one screen ---------- */
-const TIER_PX = { 1: 64, 2: 84, 3: 106, 4: 136, 5: 164 };
+const TIER_PX = { 1: 96, 2: 126, 3: 159, 4: 204, 5: 246 };   // 포자 크기(px) — 처음보다 1.5배
 let NODES = [], EDGES = [], TAGS = [], W = innerWidth, H = innerHeight;
 function layout() {
   W = innerWidth; H = innerHeight;
@@ -106,123 +97,56 @@ function layout() {
   });
 }
 
-/* ---------- view: zoom (wheel / pinch / keys) and a little panning when zoomed in ---------- */
-const Z_MIN = .75, Z_MAX = 5;
-const view = { z: 1, x: 0, y: 0 }, goal = { z: 1, x: 0, y: 0 };
-const sx = wx => (wx - W / 2) * view.z + W / 2 + view.x, sy = wy => (wy - H / 2) * view.z + H / 2 + view.y;
-const sizeK = z => Math.pow(z, .72);          // spores grow slower than the distances between them, so zooming opens the rhizome up
-function clampPan(v) { const m = Math.max(0, v.z - 1) * .62 + .08; v.x = clamp(v.x, -W * m, W * m); v.y = clamp(v.y, -H * m, H * m); }
-function zoomAt(f, cx, cy) {
-  const z = clamp(goal.z * f, Z_MIN, Z_MAX); if (z === goal.z) return;
-  const wx = (cx - W / 2 - goal.x) / goal.z + W / 2, wy = (cy - H / 2 - goal.y) / goal.z + H / 2;   // keep the point under the cursor in place
-  goal.z = z; goal.x = cx - W / 2 - (wx - W / 2) * z; goal.y = cy - H / 2 - (wy - H / 2) * z;
-  clampPan(goal); kick();
-}
-const blocked = el => el && el.closest && el.closest("#reader,#about,#nav,.hero-foot");
+/* ---------- scroll (wheel / swipe / keys) → fade into the rhizome page ---------- */
+const view = { z: 1, x: 0, y: 0 };
+const sx = wx => wx + view.x, sy = wy => wy + view.y;
+const blocked = el => el && el.closest && el.closest("#reader,#about,#nav");
+let acc = 0, accT = 0;
 addEventListener("wheel", e => {
-  if (blocked(e.target)) return;
+  if (blocked(e.target) || SP.readerId) return;
   e.preventDefault();
-  const d = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? H : 1);
-  zoomAt(Math.exp(-clamp(d, -240, 240) * (e.ctrlKey ? .01 : .0018)), e.clientX, e.clientY);
+  const now = performance.now(); if (now - accT > 400) acc = 0; accT = now;
+  acc += Math.abs(e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? H : 1));
+  if (acc > 40) SP.go("/spore/rhizome/", "rhizome");
 }, { passive: false });
+let touchY = null;
+hero.addEventListener("touchstart", e => { touchY = e.touches.length === 1 ? e.touches[0].clientY : null; }, { passive: true });
+hero.addEventListener("touchmove", e => { if (touchY != null && Math.abs(e.touches[0].clientY - touchY) > 50 && !document.documentElement.classList.contains("spore-drag")) { touchY = null; SP.go("/spore/rhizome/", "rhizome"); } }, { passive: true });
 addEventListener("keydown", e => {
   if (SP.readerId || /input|textarea/i.test(document.activeElement?.tagName || "")) return;
-  if (e.key === "+" || e.key === "=") zoomAt(1.25, W / 2, H / 2);
-  else if (e.key === "-" || e.key === "_") zoomAt(.8, W / 2, H / 2);
-  else if (e.key === "0") reset();
+  if (["ArrowDown", "PageDown", " ", "Spacebar"].includes(e.key)) { e.preventDefault(); SP.go("/spore/rhizome/", "rhizome"); }
 });
-function reset() { goal.z = 1; goal.x = 0; goal.y = 0; kick(); }
-$("#zoom-cue").addEventListener("click", () => goal.z > 1.05 ? reset() : zoomAt(2, W / 2, H / 2));
-hero.addEventListener("dblclick", e => { if (!e.target.closest(".sp")) reset(); });
-
-// drag on empty space pans (spores and 3D models keep their own drag); two fingers pinch-zoom
-const pts = new Map(); let pan = null, pinch = null;
-const onEmpty = e => !e.target.closest(".sp,#nav,#reader,#about,.hero-foot") && !document.documentElement.classList.contains("spore-hot") && !document.documentElement.classList.contains("spore-drag");
-hero.addEventListener("pointerdown", e => {
-  if (e.pointerType === "mouse" && e.button !== 0) return;
-  pts.set(e.pointerId, [e.clientX, e.clientY]);
-  if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch = { d: Math.hypot(a[0] - b[0], a[1] - b[1]) }; pan = null; return; }
-  if (onEmpty(e)) { pan = { x: e.clientX, y: e.clientY, moved: 0 }; try { hero.setPointerCapture(e.pointerId); } catch {} }
-});
-hero.addEventListener("pointermove", e => {
-  if (!pts.has(e.pointerId)) return;
-  pts.set(e.pointerId, [e.clientX, e.clientY]);
-  if (pinch && pts.size === 2) {
-    const [a, b] = [...pts.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]);
-    zoomAt(d / pinch.d, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2); pinch.d = d; return;
-  }
-  if (!pan) return;
-  const dx = e.clientX - pan.x, dy = e.clientY - pan.y; pan.x = e.clientX; pan.y = e.clientY; pan.moved += Math.abs(dx) + Math.abs(dy);
-  if (pan.moved > 4) hero.classList.add("panning");
-  goal.x += dx; goal.y += dy; clampPan(goal); view.x = goal.x; view.y = goal.y; kick();
-});
-const endPt = e => {
-  pts.delete(e.pointerId); if (pts.size < 2) pinch = null;
-  if (pan && pan.moved > 5) { document.documentElement.dataset.justDragged = "1"; setTimeout(() => delete document.documentElement.dataset.justDragged, 0); }
-  pan = null; hero.classList.remove("panning");
-};
-hero.addEventListener("pointerup", endPt); hero.addEventListener("pointercancel", endPt);
+$("#enter-cue").addEventListener("click", e => { e.preventDefault(); SP.go("/spore/rhizome/", "rhizome"); });
 
 /* ---------- drawing ---------- */
-let raf = 0, grow = REDUCE ? 1 : 0, t0 = 0, commitT = 0, committed = 1;
+let raf = 0, grow = REDUCE ? 1 : 0, t0 = 0;
 function kick() { if (!raf) raf = requestAnimationFrame(frame); }
 function frame(now) {
   raf = 0;
-  const e = REDUCE ? 1 : .2;
-  view.z += (goal.z - view.z) * e; view.x += (goal.x - view.x) * e; view.y += (goal.y - view.y) * e;
-  if (Math.abs(goal.z - view.z) < .0005 && Math.abs(goal.x - view.x) < .1 && Math.abs(goal.y - view.y) < .1) Object.assign(view, goal);
   if (!t0) t0 = now; grow = REDUCE ? 1 : clamp((now - t0) / 2600, 0, 1);
-  draw(now);
-  const moving = view.z !== goal.z || view.x !== goal.x || view.y !== goal.y || grow < 1;
-  // after the zoom settles, give the spores their real size (sharp 3D) instead of a stretched picture
-  if (!moving && Math.abs(committed - sizeK(view.z)) > .02) { clearTimeout(commitT); commitT = setTimeout(commit, 180); }
-  if (moving) kick();
-}
-function commit() {
-  committed = sizeK(view.z);
-  NODES.forEach(n => n.el && n.el.style.setProperty("--s", Math.round(n.s * committed) + "px"));
-  draw(performance.now());
+  draw();
+  if (grow < 1) kick();
 }
 function draw() {
   const dpr = Math.min(2, devicePixelRatio || 1);
   if (cv.width !== Math.round(W * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
   g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
-  const z = view.z, k = sizeK(z) / committed;
   // spores
-  NODES.forEach(n => { if (n.el) n.el.style.transform = `translate3d(${sx(n.wx).toFixed(1)}px,${sy(n.wy).toFixed(1)}px,0) scale(${k.toFixed(4)})`; });
-  hero.classList.toggle("near", z > 2.2);
+  NODES.forEach(n => { if (n.el) n.el.style.transform = `translate3d(${sx(n.wx).toFixed(1)}px,${sy(n.wy).toFixed(1)}px,0)`; });
   // hyphae
   g.lineCap = "round";
   EDGES.forEach(ed => {
     const d = clamp(grow * 1.6 - ed.at, 0, 1); if (!d) return;
     const ax = sx(ed.a.wx), ay = sy(ed.a.wy), bx = sx(ed.b.wx), by = sy(ed.b.wy);
     const mx = (ax + bx) / 2 - (by - ay) * ed.bend, my = (ay + by) / 2 + (bx - ax) * ed.bend;
-    g.strokeStyle = ed.strong ? "rgba(201,139,255,.62)" : `rgba(225,228,240,${(.13 + Math.min(.12, (z - 1) * .05)).toFixed(3)})`;
-    g.lineWidth = (ed.strong ? 1.3 : .8) * Math.min(1.8, Math.sqrt(z));
+    g.strokeStyle = ed.strong ? "rgba(201,139,255,.62)" : "rgba(225,228,240,.13)";
+    g.lineWidth = ed.strong ? 1.3 : .8;
     g.beginPath(); g.moveTo(ax, ay);
     if (d >= 1) g.quadraticCurveTo(mx, my, bx, by);
     else { const N = 24; for (let i = 1; i <= N * d; i++) { const u = i / N; g.lineTo((1 - u) * (1 - u) * ax + 2 * (1 - u) * u * mx + u * u * bx, (1 - u) * (1 - u) * ay + 2 * (1 - u) * u * my + u * u * by); } }
     g.stroke();
   });
-  // concept names surface as you zoom in
-  const la = clamp((z - 1.35) / .8, 0, 1) * grow;
-  if (la > .01) {
-    g.font = `${Math.round(10 + Math.min(4, z))}px "Space Mono", monospace`; g.textAlign = "center";
-    TAGS.forEach(tg => {
-      const cx = tg.nodes.reduce((s, n) => s + n.wx, 0) / tg.nodes.length, cy = tg.nodes.reduce((s, n) => s + n.wy, 0) / tg.nodes.length;
-      const x = sx(cx), y = sy(cy) + 4 + (hash(tg.label) % 30 - 15);
-      if (x < -80 || x > W + 80 || y < -20 || y > H + 20) return;
-      g.fillStyle = `rgba(238,240,247,${(.62 * la).toFixed(3)})`; g.fillText("#" + tg.label.toUpperCase(), x, y);
-      g.fillStyle = `rgba(201,139,255,${(.8 * la).toFixed(3)})`; g.beginPath(); g.arc(x, y - 14, 2, 0, 6.29); g.fill();
-    });
-  }
-  // the title and the mother spore stay behind: they drift less and fade as you go in
-  const tk = Math.pow(z, .35);
-  $("#hero-title").style.transform = `translate3d(${(view.x * .35).toFixed(1)}px,calc(-54% + ${(view.y * .35).toFixed(1)}px),0) scale(${tk.toFixed(4)})`;
-  $("#hero-title").style.opacity = clamp(1.55 - z * .55, .06, 1).toFixed(3);
-  $("#mother").style.transform = `translate3d(${(view.x * .25).toFixed(1)}px,${(view.y * .25).toFixed(1)}px,0) scale(${Math.pow(z, .3).toFixed(4)})`;
-  $("#mother").style.opacity = clamp(1.4 - z * .4, .25, 1).toFixed(3);
-  $("#zoom-pct").textContent = Math.round(z * 100) + "%";
+
 }
 
 /* ---------- spores ---------- */
@@ -231,19 +155,15 @@ function renderHero() {
   $("#hero-title").innerHTML = t("title").map(l => `<span>${esc(l)}</span>`).join("");
   $("#hero-sub").textContent = t("subtitle");
   $("#hero-meta").textContent = `${N} ${t("spores")} · ${EDGES.length} ${t("hyphae")}`;
-  $("#zoom-txt").textContent = t("scroll");
+  $("#enter-txt").textContent = t("scroll");
   const R = rnd("bob" + N);
-  committed = sizeK(view.z);
   $("#field").innerHTML = NODES.map(n => `<button class="sp${n.p._tier >= 4 ? " big" : ""}" data-read="${esc(n.id)}" aria-label="${esc(SP.titleOf(n.p))}"
-      style="--s:${Math.round(n.s * committed)}px;--d:${(4 + R() * 4).toFixed(2)}s;--dl:${(-R() * 6).toFixed(2)}s">
+      style="--s:${n.s}px;--d:${(4 + R() * 4).toFixed(2)}s;--dl:${(-R() * 6).toFixed(2)}s">
       <span class="sp-body">${SP.sporeImg(n.p, "", true)}</span><span class="sp-lbl"><span class="mono">${esc(t("article"))} / ${SP.no(n.p)}</span>${esc(SP.titleOf(n.p))}</span></button>`).join("");
   const els = new Map([...$("#field").children].map(el => [el.dataset.read, el]));
   NODES.forEach(n => { n.el = els.get(n.id); });
   draw(); kick();
 }
-
-/* the mother spore: the original Higgsfield model (spin version), behind everything */
-SP.spore3d($("#mother-float"), { src: "/spore/media/spore-spin.glb", mobileSrc: "/spore/media/spore-mobile.glb", eager: true, speed: 14 });
 
 /* ---------- reader ↔ address (#p=글ID), so links can be shared and Back closes it ---------- */
 SP.read = id => { if (location.hash !== "#p=" + encodeURIComponent(id)) history.pushState(null, "", "#p=" + encodeURIComponent(id)); SP.openReader(id); };

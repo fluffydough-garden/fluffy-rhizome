@@ -13,7 +13,7 @@ const TEXT = {
     title: ["SOFT", "INVASION"], titleFlat: "Soft Invasion",
     subtitle: "Scattering without a sound, multiplying, connecting.",
     navSpores: "Spores", navRhizome: "Rhizome", navArchive: "Archive", navAbout: "About",
-    spores: "spores", hyphae: "hyphae", scroll: "Scroll to zoom",
+    spores: "spores", hyphae: "hyphae", scroll: "Scroll into the rhizome",
     specimensTitle: "SPECIMENS", specimensLead: "Every spore is one article. Its color and skin come from what the article is about; its shape from how it is written.",
     noneYet: "None yet", secondary: "secondary",
     rhizomeTitle: "RHIZOME", rhizomeLead: "Spores grow hyphae toward the concepts they share. This is a still from the living map.",
@@ -37,7 +37,7 @@ const TEXT = {
     title: ["부드러운", "침범"], titleFlat: "부드러운 침범",
     subtitle: "소리없이 흩어지고 번식하며 연결되기",
     navSpores: "포자", navRhizome: "리좀", navArchive: "아카이브", navAbout: "소개",
-    spores: "포자", hyphae: "균사", scroll: "스크롤로 확대 · 축소",
+    spores: "포자", hyphae: "균사", scroll: "스크롤하면 리좀으로",
     specimensTitle: "포자 분류", specimensLead: "포자 하나가 글 한 편이에요. 색과 표면은 글이 다루는 의제에서, 형태는 글이 쓰인 방식에서 나와요.",
     noneYet: "아직 없음", secondary: "보조",
     rhizomeTitle: "리좀", rhizomeLead: "포자들은 같은 개념을 향해 균사를 뻗어요. 살아 있는 지도의 한 장면이에요.",
@@ -664,6 +664,26 @@ new MutationObserver(() => { if (!hydRaf) hydRaf = requestAnimationFrame(() => {
 
 /* ===================== nav ===================== */
 let navActive = "";
+/* 페이지 전환: 대문 ↔ 리좀을 페이드로. 브라우저가 문서 간 View Transition을 지원하면 그걸로(탭 밑줄이 미끄러져 옮겨 감),
+   아니면 직접 화면을 흐리게 지운 뒤 넘어가고, 도착한 페이지가 다시 밝아져요. */
+const IND = '<span class="nav-ind" aria-hidden="true"></span>';
+const VT = "CSSViewTransitionRule" in window;
+let going = false;
+function go(href, tab) {
+  if (going) return; going = true;
+  if (VT || REDUCE) { location.href = href; return; }
+  if (tab) renderNav(tab);                        // 탭 먼저 바꾸고
+  try { sessionStorage.setItem("sp-fade", "1"); } catch {}
+  document.documentElement.classList.add("page-out");   // 화면을 지운 뒤
+  setTimeout(() => { location.href = href; }, 520);     // 넘어가요
+}
+addEventListener("pageshow", () => { going = false; document.documentElement.classList.remove("page-out"); });
+try { if (sessionStorage.getItem("sp-fade")) { sessionStorage.removeItem("sp-fade"); document.documentElement.classList.add("page-in"); } } catch {}
+document.addEventListener("click", e => {
+  const a = e.target.closest && e.target.closest("a[data-go]"); if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
+  if (a.getAttribute("aria-current")) { e.preventDefault(); return; }
+  e.preventDefault(); go(a.getAttribute("href"), a.dataset.go);
+});
 function renderNav(active) {
   if (active !== undefined) navActive = active;
   const el = $("#nav"); if (!el) return;
@@ -671,8 +691,8 @@ function renderNav(active) {
   el.innerHTML = `
     <a class="brand" href="${home}"><span class="brand-mark" aria-hidden="true"></span><span>${esc(t("titleFlat"))}</span></a>
     <nav class="links" aria-label="Main">
-      <a href="${home}" ${navActive === "spores" ? 'aria-current="page"' : ""}>${esc(t("navSpores"))}</a>
-      <a href="/spore/rhizome/" ${navActive === "rhizome" ? 'aria-current="page"' : ""}>${esc(t("navRhizome"))}</a>
+      <a href="${home}" data-go="spores" ${navActive === "spores" ? 'aria-current="page"' : ""}>${esc(t("navSpores"))}${navActive === "spores" ? IND : ""}</a>
+      <a href="/spore/rhizome/" data-go="rhizome" ${navActive === "rhizome" ? 'aria-current="page"' : ""}>${esc(t("navRhizome"))}${navActive === "rhizome" ? IND : ""}</a>
       <button type="button" data-sp="about">${esc(t("navAbout"))}</button>
     </nav>
     <div class="lang" role="group" aria-label="Language">
@@ -900,7 +920,7 @@ const ready = Promise.all([document.fonts ? document.fonts.ready : null, load()]
 const SP = window.SP = {
   TEXT, TOPICS, t, get lang() { return LANG; }, setLang, onLang: f => langHooks.push(f), onData: f => dataHooks.push(f),
   ready, get posts() { return POSTS; }, get links() { return LINKS; }, byId: id => BYID.get(id), linkedOf, get src() { return src; }, get data() { return DATA; },
-  spore3d, titleOf, altTitleOf, summaryOf, bodyOf, no, catOf, catName, topicText, sporeCanvas, sporeSrc, sporeImg, network,
+  go, spore3d, titleOf, altTitleOf, summaryOf, bodyOf, no, catOf, catName, topicText, sporeCanvas, sporeSrc, sporeImg, network,
   renderNav, openReader, closeReader, readerHooks, get readerId() { return readerId; }, openAbout, closeAbout, toast, refresh,
   // pages may replace these (e.g. to keep the address in sync)
   read: id => openReader(id), unread: () => closeReader(),
