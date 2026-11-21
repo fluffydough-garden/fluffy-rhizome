@@ -3,10 +3,10 @@ import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
 import { readDb, writeDb, latestVersion, authed, json, unauthorized } from "../lib/store.js";
 import { THEMES, EXPERIENCES, PATTERNS, STANCES, MOTIONS, FORMATS, FIELDS, CONFIDENCE_MIN, DNA_VERSION,
-  cleanDna, lowConfidence, isComplete, colorRule, stoneImagePrompt, stoneVideoPrompt, dnaSummary } from "../lib/stone.js";
+  cleanDna, lowConfidence, isComplete, colorRule, stoneImagePrompt, stoneModelPrompt, webMotionOf, MODEL_SPEC, dnaSummary } from "../lib/stone.js";
 
 // 돌 DNA: 전시 리뷰를 읽고 돌의 속성(색·형태·무늬·표면·내포물·움직임)을 정해진 값 중에서 고르고,
-// 이미지(정적인 돌)·영상(Higgsfield I2V) 프롬프트를 만들어요. 어드민 비밀번호가 필요해요.
+// 이미지(정적인 돌, 3D의 참조 이미지)·3D 모델(GLB, 이미지→3D) 프롬프트를 만들어요. 어드민 비밀번호가 필요해요.
 //
 //  GET  /api/stone?schema=1                       분류체계 (어드민 화면용)
 //  POST /api/stone { action: "analyze", id }        저장된 글을 분석 (저장은 안 함)
@@ -92,7 +92,7 @@ ${String(body || "").slice(0, 60000)}`;
 const pack = (dna, extra = {}) => ({
   dna, low: lowConfidence(dna), complete: isComplete(dna), summary: dnaSummary(dna),
   color: (r => r && { mode: r.mode, ko: r.ko, primary: r.primary.hex, secondary: r.secondary?.hex || null })(colorRule(dna)),
-  imagePrompt: stoneImagePrompt(dna), videoPrompt: stoneVideoPrompt(dna), version: DNA_VERSION, ...extra
+  imagePrompt: stoneImagePrompt(dna), modelPrompt: stoneModelPrompt(dna), modelSpec: MODEL_SPEC, webMotion: webMotionOf(dna), version: DNA_VERSION, ...extra
 });
 
 // 읽고 → 바꾸고 → 그사이 다른 저장이 끼었으면 최신 DB로 다시 (api/spore.js와 같은 방식)
@@ -150,7 +150,7 @@ export async function POST(req) {
         analyzedAt: b.analyzedAt || p.stone?.analyzedAt || null, model: String(b.model || p.stone?.model || "").slice(0, 80),
         arguments: Array.isArray(b.arguments) ? b.arguments.map(s => String(s).slice(0, 200)).slice(0, 6) : (p.stone?.arguments || []),
         note: String(b.note ?? p.stone?.note ?? "").slice(0, 500),
-        imagePrompt: stoneImagePrompt(dna), videoPrompt: stoneVideoPrompt(dna)
+        imagePrompt: stoneImagePrompt(dna), modelPrompt: stoneModelPrompt(dna)
       };
     });
     if (r.error) return json(r, 404);

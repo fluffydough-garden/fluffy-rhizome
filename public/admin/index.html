@@ -851,7 +851,7 @@ function sporeHowtoDialog() {
 /* ---------- 돌 DNA ----------
    전시 리뷰를 돌의 6가지 속성(색=주제 · 형태=관람 경험 · 무늬=해석 관점 · 표면=비평 태도 · 내포물=논점 수 · 움직임=서술 방향)으로.
    ‘AI 분석’은 정해진 값 중에서만 골라요(lib/stone.js). 확신도 0.7 미만 항목이 있으면 자동 확정하지 않고 ‘확인 필요’로 둬요.
-   이미지 프롬프트(정적인 돌)와 Higgsfield 영상 프롬프트를 만들어 복사할 수 있어요. 원문을 붙여넣어 분석만 할 수도 있어요. */
+   이미지 프롬프트(정적인 돌 = 3D의 참조 이미지)와 3D 모델(GLB) 프롬프트를 만들어 복사할 수 있어요. 원문을 붙여넣어 분석만 할 수도 있어요. */
 let STX = null;                                   // /api/stone?schema=1
 const STV = { filter: "all", busy: new Set(), bulk: false };
 let DX = null;                                    // 열려 있는 DNA 편집 창 { id|null, dna, arguments, note, model, analyzedAt, out }
@@ -896,7 +896,7 @@ function stonesView() {
   const shown = posts.filter(p => STV.filter === "all" || stoneState(p) === STV.filter);
   return `
   <div class="page-head">
-    <div><h1>돌 DNA</h1><p>글을 읽고 돌의 속성을 골라 이미지·영상 프롬프트를 만들어요. 색=주제, 형태=관람 경험, 무늬=해석 관점, 표면=비평 태도, 내포물=논점 수, 움직임=서술 방향.</p></div>
+    <div><h1>돌 DNA</h1><p>글을 읽고 돌의 속성을 골라 이미지·3D 모델(GLB) 프롬프트를 만들어요. 색=주제, 형태=관람 경험, 무늬=해석 관점, 표면=비평 태도, 내포물=논점 수, 움직임=서술 방향.</p></div>
     <div class="actions">
       <button class="btn outline" data-action="stone-legend">${icon("eye")}분류표</button>
       <button class="btn outline" data-action="stone-paste">${icon("file")}원문 붙여넣어 분석</button>
@@ -974,11 +974,11 @@ function renderStoneDialog() {
     ${DX.note ? `<div class="alert">${icon("alert")}<div><b>AI 메모</b><span class="muted">${esc(DX.note)}</span></div></div>` : ""}
     <div>${DNA_KEYS.map(fieldRow).join("")}</div>
     ${DX.arguments?.length ? `<div class="field"><label>핵심 논점</label><ol class="dna-args">${DX.arguments.map(a => `<li>${esc(a)}</li>`).join("")}</ol></div>` : ""}
-    <div class="field"><label>이미지 프롬프트 <span class="muted" style="font-weight:400">· 정적인 돌 원본</span></label><pre class="code dna-prompt" id="dna-img">${esc(o?.imagePrompt || "만드는 중…")}</pre></div>
-    <div class="field"><label>영상 프롬프트 <span class="muted" style="font-weight:400">· Higgsfield 이미지→영상, 위 이미지를 시작 프레임으로</span></label><pre class="code dna-prompt" id="dna-vid">${esc(o?.videoPrompt || "만드는 중…")}</pre></div>
+    <div class="field"><label>① 이미지 프롬프트 <span class="muted" style="font-weight:400">· 정적인 돌 원본 — 3D의 참조 이미지가 돼요</span></label><pre class="code dna-prompt" id="dna-img">${esc(o?.imagePrompt || "만드는 중…")}</pre></div>
+    <div class="field"><label>② 3D 모델 프롬프트 <span class="muted" style="font-weight:400">· 이미지→3D(①의 이미지를 참조로), 웹에 넣을 GLB</span></label><pre class="code dna-prompt" id="dna-vid">${esc(o?.modelPrompt || "만드는 중…")}</pre>${o?.webMotion ? `<span class="hint">움직임은 모델에 넣지 않고 웹진 3D 뷰어의 카메라 값으로 써요: <span class="mono">${esc(o.webMotion.camera)}</span></span>` : ""}</div>
     <div class="dialog-foot" style="flex-wrap:wrap">
       <button class="btn outline" data-action="stone-copy" data-v="img">${icon("copy")}이미지 프롬프트</button>
-      <button class="btn outline" data-action="stone-copy" data-v="vid">${icon("copy")}영상 프롬프트</button>
+      <button class="btn outline" data-action="stone-copy" data-v="vid">${icon("copy")}3D 모델 프롬프트</button>
       <button class="btn outline" data-action="stone-copy" data-v="json">${icon("copy")}JSON</button>
       <span style="flex:1"></span>
       <button class="btn outline" data-action="dialog-cancel">닫기</button>
@@ -990,7 +990,7 @@ async function refreshStonePrompts() {
   if (!DX) return; const me = DX;
   try { me.out = await stonePost({ action: "prompts", dna: me.dna }); } catch { return; }
   if (DX !== me || !$("#dna-img")) return;
-  $("#dna-img").textContent = me.out.imagePrompt; $("#dna-vid").textContent = me.out.videoPrompt;
+  $("#dna-img").textContent = me.out.imagePrompt; $("#dna-vid").textContent = me.out.modelPrompt;
   const save = $('[data-action="stone-save"]'); if (save) save.disabled = !me.out.complete;
   const sw = $("#dialog-root .st-swatch"); if (sw) sw.outerHTML = swatch(me.dna);
   const hint = $("#dialog-root .st-swatch + .hint"); if (hint) hint.textContent = me.out.color?.ko || "";
@@ -1038,7 +1038,7 @@ function stoneLegendDialog() {
     ${sec("무늬 · 해석 관점", STX.patterns, v => [esc(`${v.ko} · ${v.lens}`), v.desc])}
     ${sec("표면 · 비평 태도", STX.stances, v => [esc(`${v.surface} · ${v.ko}`), v.desc])}
     <h3 style="font-size:14px;margin-top:8px">내포물 · 논점 수</h3><p class="hint">1개 드문드문한 작은 결정 · 2개 두 종류의 광물 집합 · 3개 이상 여러 내포물이 모인 복합 구조. 키워드 수가 아니라 독립적으로 논의되는 핵심 주장의 수예요.</p>
-    ${sec("움직임 · 서술 방향 (영상 카메라)", STX.motions, v => [esc(v.camera), v.ko])}
+    ${sec("움직임 · 서술 방향 (웹 3D 뷰어 카메라)", STX.motions, v => [esc(v.camera), v.ko])}
     <div class="dialog-foot"><button class="btn primary" data-action="dialog-cancel">닫기</button></div>`, true);
 }
 
@@ -1946,8 +1946,8 @@ document.addEventListener("click", async e => {
     case "stone-paste": stonePasteDialog(); break;
     case "stone-paste-run": stonePasteRun(t); break;
     case "stone-legend": stoneLegendDialog(); break;
-    case "stone-copy": { const o = DX?.out; const txt = t.dataset.v === "img" ? o?.imagePrompt : t.dataset.v === "vid" ? o?.videoPrompt
-        : JSON.stringify({ title: DX.title || "", ...Object.fromEntries(DNA_KEYS.filter(k => DX.dna[k]).map(k => [k, DX.dna[k].value])), arguments: DX.arguments || [], confidence: Object.fromEntries(DNA_KEYS.filter(k => DX.dna[k]).map(k => [k, DX.dna[k].confidence])), imagePrompt: o?.imagePrompt, videoPrompt: o?.videoPrompt }, null, 2);
+    case "stone-copy": { const o = DX?.out; const txt = t.dataset.v === "img" ? o?.imagePrompt : t.dataset.v === "vid" ? o?.modelPrompt
+        : JSON.stringify({ title: DX.title || "", ...Object.fromEntries(DNA_KEYS.filter(k => DX.dna[k]).map(k => [k, DX.dna[k].value])), arguments: DX.arguments || [], confidence: Object.fromEntries(DNA_KEYS.filter(k => DX.dna[k]).map(k => [k, DX.dna[k].confidence])), imagePrompt: o?.imagePrompt, modelPrompt: o?.modelPrompt, modelSpec: o?.modelSpec, webMotion: o?.webMotion }, null, 2);
       try { await navigator.clipboard.writeText(txt || ""); toast("복사했어요", "", "ok"); } catch { toast("복사하지 못했어요", "직접 선택해 복사해 주세요.", "err"); } break; }
     case "spore-filter": SPV.filter = t.dataset.v; renderView(); break;
     case "spore-generate": sporeGenerate(id); break;

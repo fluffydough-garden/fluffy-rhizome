@@ -1,6 +1,6 @@
 import { readDb } from "../lib/store.js";
 import { rhizomeMd } from "../lib/markdown.js";
-import { dnaValues, dnaSummary, colorRule } from "../lib/stone.js";
+import { dnaValues, dnaSummary, colorRule, webMotionOf } from "../lib/stone.js";
 
 // 공개 API — 다른 웹페이지에서 fetch로 읽어 가는 용도. 발행된 글만 나감.
 //   GET /api/rhizome               전체 (categories, nodes, links)
@@ -41,7 +41,7 @@ export async function GET(req) {
       morphology: p.spore.morphology || "", palette: p.spore.palette || [], seed: p.spore.seed || ""
     } : null,
     // 돌 DNA: 값만 공개(근거 인용·확신도는 어드민에만). confirmed = 편집자가 확인함
-    stone: p.stone && p.stone.dna ? { ...dnaValues(p.stone.dna), confirmed: !!p.stone.confirmed, summary: dnaSummary(p.stone.dna),
+    stone: p.stone && p.stone.dna ? { ...dnaValues(p.stone.dna), confirmed: !!p.stone.confirmed, summary: dnaSummary(p.stone.dna), webMotion: webMotionOf(p.stone.dna),
       colors: (r => r ? [r.primary.hex, ...(r.secondary ? [r.secondary.hex] : [])] : [])(colorRule(p.stone.dna)), version: p.stone.version || "" } : null
   });
 

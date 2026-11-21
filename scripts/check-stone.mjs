@@ -35,7 +35,8 @@ check(r.dna.primary_theme.value === "technology" && r.dna.argument_count.value =
 check(r.low.includes("secondary_theme") && r.low.includes("exhibition_format") && !r.low.includes("primary_theme"), "low confidence flagged");
 check(r.color.mode === "blend" && r.color.primary === "#6d86a0" && r.color.secondary === "#9b5e4f", "two themes → 80/20");
 check(/steel blue/.test(r.imagePrompt) && /hollow geode/.test(r.imagePrompt) && /concentric/.test(r.imagePrompt) && /chiseled/.test(r.imagePrompt), "image prompt");
-check(/push-in/i.test(r.videoPrompt) && /remain physically unchanged/.test(r.videoPrompt), "video prompt");
+check(/GLB/.test(r.modelPrompt) && /watertight/.test(r.modelPrompt) && /cavity is real geometry/.test(r.modelPrompt) && /high roughness/.test(r.modelPrompt) && /reference for a 3D model/.test(r.imagePrompt), "3D model prompt");
+check(r.webMotion.camera === "dolly-in" && !/camera|push-in/i.test(r.modelPrompt.split("OUTPUT")[1]), "motion goes to the web viewer, not the model");
 check(sent.output_config?.format && sent.messages[0].content.includes("반복하는 기계") && sent.system.includes("정의된 값 중에서만"), "sends post + structured output");
 
 // 붙여넣은 원문 + 보조 주제 없음, 모르는 값은 버림
@@ -53,15 +54,15 @@ check(sent.messages[0].content.includes("전시 정보") && sent.messages[0].con
 
 // 3개 이상 논점 + 보조 주제 = 광맥
 r = await J(await st.POST(req("POST", "/api/stone", { action: "prompts", dna: { primary_theme: "ecology", secondary_theme: "body", argument_count: 3, experience: "participatory", interpretive_lens: "relation", critical_stance: "speculative", narrative_direction: "inquiry" } })));
-check(r.color.mode === "veins" && /only as thin veins/.test(r.imagePrompt) && /porous/.test(r.imagePrompt) && /frosted/.test(r.imagePrompt) && /orbit/.test(r.videoPrompt), "veins rule + prompts");
+check(r.color.mode === "veins" && /only as thin veins/.test(r.imagePrompt) && /porous/.test(r.imagePrompt) && /frosted/.test(r.imagePrompt) && /veins and small crystals/.test(r.modelPrompt) && /holes and passages are real geometry/.test(r.modelPrompt) && r.webMotion.camera === "orbit-20", "veins rule + prompts");
 
 // 저장 → 글을 통째로 다시 저장해도 남아 있음 → 공개 API엔 값만
 r = await J(await st.POST(req("POST", "/api/stone", { action: "save", id: "a1", confirmed: true, dna: reply && { primary_theme: f("technology"), experience: f("immersive"), interpretive_lens: f("repetition"), critical_stance: f("critical"), argument_count: f(2), narrative_direction: f("deep_dive") }, arguments: ["하나", "둘"] })));
-check(r.stone.confirmed === true && r.stone.dna.primary_theme.evidence === "근거 문장" && /geode/.test(r.stone.imagePrompt), "save");
+check(r.stone.confirmed === true && r.stone.dna.primary_theme.evidence === "근거 문장" && /geode/.test(r.stone.imagePrompt) && /GLB/.test(r.stone.modelPrompt) && !r.stone.videoPrompt, "save");
 await db.POST(req("POST", "/api/db", { ops: [{ op: "set", coll: "posts", id: "a1", data: { title: "반복하는 기계", body: "고친 본문", status: "published" } }] }));
 const list = await J(await pub.GET(new Request("https://site/api/rhizome")));
 const n = list.nodes.find(x => x.id === "a1");
-check(n.stone && n.stone.primary_theme === "technology" && n.stone.confirmed === true && n.stone.colors[0] === "#6d86a0" && !JSON.stringify(n.stone).includes("근거 문장"), "survives post save; public has values only");
+check(n.stone && n.stone.primary_theme === "technology" && n.stone.confirmed === true && n.stone.colors[0] === "#6d86a0" && n.stone.webMotion.camera === "dolly-in" && !JSON.stringify(n.stone).includes("근거 문장"), "survives post save; public has values only");
 r = await J(await st.POST(req("POST", "/api/stone", { action: "clear", id: "a1" })));
 check(r.stone === null, "clear");
 check((await st.POST(req("POST", "/api/stone", { action: "save", id: "zz", dna: {} }))).status === 404, "unknown post → 404");
