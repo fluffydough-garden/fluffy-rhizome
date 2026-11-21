@@ -223,6 +223,9 @@ function index() {
   artCache.clear();
 }
 const titleOf = p => LANG === "en" && p.titleEn ? p.titleEn : p.title;
+// 영어 화면에선 어드민에서 번역해 둔 요약·본문을 쓰고, 없으면 한국어 원문
+const summaryOf = p => LANG === "en" && p.summaryEn ? p.summaryEn : (p.summary || "");
+const bodyOf = p => LANG === "en" && p.bodyEn ? p.bodyEn : (p.body || "");
 const altTitleOf = p => LANG === "en" ? (p.titleEn ? p.title : "") : (p.titleEn || "");
 const no = p => String(p._no).padStart(3, "0");
 const catOf = p => CATS.get(p.category);
@@ -418,6 +421,164 @@ function traceLoop() {
   if (pts.length) trace.raf = requestAnimationFrame(traceLoop);
 }
 
+/* ===================== lens cursor ===================== */
+/* 커서 = 16px 어안렌즈 구슬(링크·버튼 위에선 32px). 렌즈 안에만 색 번짐(bloom)이 있는데,
+   multiply로 섞여서 어두운 바탕에선 안 보이고 밝은 글자·포자에 닿을 때만 색이 비쳐 보여요.
+   렌즈 굴절은 SVG 변위 필터(backdrop-filter:url())라 Chrome 계열에서만, 나머지 브라우저는 유리 느낌만. */
+const LENS = { s: 16, l: 32 };         // 렌즈 지름(px): 평소 · 호버 — 크기를 바꾸면 shared.css의 --lens·#lens-16/#lens-32도 같이
+const LENS_HOVER = "a,button,label,select,summary,[role=button],[data-read],[tabindex]:not([tabindex='-1']),.fb,.cn";
+function fishMap(D, a) {               // displacement map that pulls pixels toward the middle = magnify
+  const N = 64, c = document.createElement("canvas"); c.width = c.height = N;
+  const g = c.getContext("2d"), im = g.createImageData(N, N);
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    const nx = (x + .5) / N * 2 - 1, ny = (y + .5) / N * 2 - 1, r2 = nx * nx + ny * ny, i = (y * N + x) * 4;
+    const k = r2 < 1 ? -a * (1 - r2) * .5 : 0;   // displacement in units of D
+    im.data[i] = Math.round(255 * clamp(.5 + nx * k, 0, 1)); im.data[i + 1] = Math.round(255 * clamp(.5 + ny * k, 0, 1)); im.data[i + 2] = 128; im.data[i + 3] = 255;
+  }
+  g.putImageData(im, 0, 0);
+  return `<filter id="lens-${D}" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse" primitiveUnits="userSpaceOnUse">
+    <feImage href="${c.toDataURL()}" x="0" y="0" width="${D}" height="${D}" preserveAspectRatio="none" result="m"/>
+    <feDisplacementMap in="SourceGraphic" in2="m" scale="${D}" xChannelSelector="R" yChannelSelector="G"/></filter>`;
+}
+function lensInit() {
+  if (!matchMedia("(hover: hover) and (pointer: fine)").matches || document.getElementById("lens")) return;
+  const chromium = !!(navigator.userAgentData && navigator.userAgentData.brands.some(b => /Chromium/.test(b.brand)));
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("width", "0"); svg.setAttribute("height", "0"); svg.setAttribute("aria-hidden", "true"); svg.style.position = "absolute";
+  svg.innerHTML = fishMap(LENS.s, .9) + fishMap(LENS.l, 1.15);
+  const bloom = document.createElement("div"), lens = document.createElement("div");
+  bloom.id = "lens-bloom"; lens.id = "lens"; bloom.setAttribute("aria-hidden", "true"); lens.setAttribute("aria-hidden", "true");
+  if (chromium) lens.classList.add("refract");
+  document.body.append(svg, bloom, lens);
+  document.documentElement.classList.add("lens-on");
+  let x = -100, y = -100, bx = x, by = y, raf = 0, hover = false;
+  const place = () => {
+    raf = 0;
+    bx = x; by = y;   // the bloom sits exactly inside the bead
+    lens.style.transform = `translate(${x}px,${y}px)`;
+    bloom.style.transform = `translate(${bx}px,${by}px)`;
+    if (Math.abs(x - bx) + Math.abs(y - by) > .3) raf = requestAnimationFrame(place);
+  };
+  addEventListener("pointermove", e => {
+    if (e.pointerType !== "mouse") return;
+    x = e.clientX; y = e.clientY; document.documentElement.classList.remove("lens-out");
+    const t = e.target, h = document.documentElement.classList.contains("spore-hot") || !!(t && t.closest && (t.closest(LENS_HOVER) || (t.style && t.style.cursor === "pointer")));
+    if (h !== hover) { hover = h; document.documentElement.classList.toggle("lens-hover", h); }
+    if (!raf) raf = requestAnimationFrame(place);
+  }, { passive: true });
+  addEventListener("pointerdown", () => document.documentElement.classList.add("lens-down"));
+  addEventListener("pointerup", () => document.documentElement.classList.remove("lens-down"));
+  document.addEventListener("mouseleave", () => document.documentElement.classList.add("lens-out"));
+}
+
+/* ===================== 3D spores ===================== */
+/* Higgsfield(Meshy)로 만든 3D 포자. 혼자 천천히 돌다가, 포자 위에 올리면 멈추고, 끌면 그 방향으로 돌아가요(놓으면 관성 → 다시 혼자 회전).
+   SP.spore3d(자리 요소, { src, mobileSrc, speed, hue, tilt })
+   - 자리 요소는 크기만 주면 돼요. 화면 가까이 오면 그때 불러와요(loading=lazy).
+   - 포자 모양 위에서만 반응해요(상자 전체가 아니라). 그래서 뒤에 깔린 버튼·포자는 그대로 눌려요. */
+const MV_SRC = "https://cdn.jsdelivr.net/npm/@google/model-viewer@4.0.0/dist/model-viewer.min.js";
+let mvLoad = null;
+const hasGL = (() => { try { const c = document.createElement("canvas"); return !!(c.getContext("webgl2") || c.getContext("webgl")); } catch { return false; } })();
+function loadMV() {
+  if (!mvLoad) mvLoad = new Promise((ok, no) => { const s = document.createElement("script"); s.type = "module"; s.src = MV_SRC; s.onload = () => customElements.whenDefined("model-viewer").then(ok); s.onerror = no; document.head.appendChild(s); });
+  return mvLoad;
+}
+const spores3d = [];
+const SMALL = () => matchMedia("(max-width: 720px), (pointer: coarse)").matches;
+function spore3d(host, o = {}) {
+  if (!hasGL || !host) return null;
+  const S = { host, mv: null, hot: false, drag: null, vel: 0, spin: o.speed || 16, tilt: o.tilt ?? 78, theta: o.theta || 0 };
+  loadMV().then(() => {
+    const mv = document.createElement("model-viewer");
+    mv.setAttribute("src", SMALL() && o.mobileSrc ? o.mobileSrc : o.src);
+    mv.setAttribute("alt", ""); mv.setAttribute("aria-hidden", "true"); mv.setAttribute("tabindex", "-1");
+    mv.setAttribute("loading", o.eager ? "eager" : "lazy");
+    mv.setAttribute("environment-image", "neutral"); mv.setAttribute("exposure", String(o.exposure || 1.15)); mv.setAttribute("shadow-intensity", "0");
+    mv.setAttribute("interaction-prompt", "none"); mv.setAttribute("field-of-view", "28deg"); mv.setAttribute("interpolation-decay", "90");
+    mv.setAttribute("camera-orbit", `${S.theta}deg ${S.tilt}deg auto`);
+    mv.setAttribute("rotation-per-second", `${S.spin}deg`); mv.setAttribute("auto-rotate-delay", "0");
+    if (!REDUCE) mv.setAttribute("auto-rotate", "");
+    if (o.hue) mv.style.filter = `hue-rotate(${o.hue}deg) saturate(1.1)`;
+    mv.addEventListener("load", () => host.classList.add("on"), { once: true });
+    host.appendChild(mv); S.mv = mv; spores3d.push(S);
+  }).catch(() => {});
+  return S;
+}
+// hit test: is the pointer on the spore itself (not just its square)?
+function sporeAt(x, y, target) {
+  // links/buttons on top win — except big see-through areas marked data-spore-through (e.g. the rhizome preview link)
+  const hit = target && target.closest && target.closest("a,button,input,textarea,select,label,[data-read],#reader,#about,#nav,.fb,.cn");
+  if (hit && !hit.hasAttribute("data-spore-through")) return null;
+  for (const S of spores3d) {
+    const r = S.mv.getBoundingClientRect();
+    if (!S.host.classList.contains("on") || x < r.left || x > r.right || y < r.top || y > r.bottom) continue;
+    try { if (S.mv.positionAndNormalFromPoint(x, y)) return S; } catch {}
+  }
+  return null;
+}
+const spinOn = S => { if (!REDUCE && !S.hot && !S.drag && !S.coast) S.mv.setAttribute("auto-rotate", ""); };
+const spinOff = S => S.mv.removeAttribute("auto-rotate");
+function setHot(S) {
+  spores3d.forEach(x => { const h = x === S; if (x.hot !== h) { x.hot = h; h ? spinOff(x) : spinOn(x); } });
+  document.documentElement.classList.toggle("spore-hot", !!S);
+}
+function orbit(S) { try { const c = S.mv.getCameraOrbit(); return [c.theta, c.phi]; } catch { return [0, 1.36]; } }
+function turn(S, dTheta, dPhi) {
+  let [th, ph] = S.drag ? [S.drag.th, S.drag.ph] : orbit(S);
+  th += dTheta; ph = clamp(ph + dPhi, .35, 2.75);
+  if (S.drag) { S.drag.th = th; S.drag.ph = ph; }
+  S.mv.cameraOrbit = `${th}rad ${ph}rad auto`;
+}
+let hoverRaf = 0, lastPt = null;
+function spore3dEvents() {
+  const down = (x, y, target, id) => {
+    const S = sporeAt(x, y, target); if (!S) return false;
+    const [th, ph] = orbit(S); S.coast = false; spinOff(S);
+    S.drag = { x, y, th, ph, id, t: performance.now(), moved: 0 }; S.vel = 0;
+    document.documentElement.classList.add("spore-drag");
+    return true;
+  };
+  const move = (x, y) => {
+    const S = spores3d.find(s => s.drag); if (!S) return false;
+    const dx = x - S.drag.x, dy = y - S.drag.y, now = performance.now(), dt = Math.max(1, now - S.drag.t);
+    S.drag.moved += Math.abs(dx) + Math.abs(dy);
+    turn(S, -dx * .009, -dy * .007);
+    S.vel = S.vel * .5 + (-dx * .009 / dt) * .5;   // rad per ms, for the coast after release
+    S.drag.x = x; S.drag.y = y; S.drag.t = now;
+    return true;
+  };
+  const up = () => {
+    const S = spores3d.find(s => s.drag); if (!S) return;
+    if (S.drag.moved > 5) { document.documentElement.dataset.justDragged = "1"; setTimeout(() => delete document.documentElement.dataset.justDragged, 0); }
+    S.drag = null; document.documentElement.classList.remove("spore-drag");
+    if (Math.abs(S.vel) > .0004 && !REDUCE) {          // let it keep turning, slowing down, then hand back to the slow spin
+      S.coast = true; let last = performance.now();
+      const step = now => { const dt = now - last; last = now; S.vel *= Math.pow(.994, dt); turn(S, S.vel * dt, 0);
+        if (Math.abs(S.vel) > .00005 && S.coast) requestAnimationFrame(step); else { S.coast = false; spinOn(S); } };
+      requestAnimationFrame(step);
+    } else spinOn(S);
+  };
+  addEventListener("pointerdown", e => { if (e.pointerType === "mouse" && e.button !== 0) return; if (e.pointerType !== "touch" && down(e.clientX, e.clientY, e.target, e.pointerId)) e.preventDefault(); }, true);
+  addEventListener("pointermove", e => {
+    if (e.pointerType === "touch") return;
+    if (move(e.clientX, e.clientY)) return;
+    lastPt = e; if (!hoverRaf) hoverRaf = requestAnimationFrame(() => { hoverRaf = 0; setHot(sporeAt(lastPt.clientX, lastPt.clientY, lastPt.target)); });
+  }, { passive: true });
+  addEventListener("pointerup", up); addEventListener("pointercancel", up); addEventListener("blur", up);
+  document.addEventListener("mouseleave", () => setHot(null));
+  // touch: a finger that lands on a spore turns it instead of scrolling the page
+  document.addEventListener("touchstart", e => { const t = e.touches[0]; if (e.touches.length === 1 && down(t.clientX, t.clientY, e.target, "touch")) { e.preventDefault(); spores3d.forEach(s => s.drag && spinOff(s)); } }, { passive: false });
+  document.addEventListener("touchmove", e => { const t = e.touches[0]; if (move(t.clientX, t.clientY)) e.preventDefault(); }, { passive: false });
+  document.addEventListener("touchend", up); document.addEventListener("touchcancel", up);
+  // the click that ends a drag should not open anything underneath
+  addEventListener("click", e => { if (document.documentElement.dataset.justDragged) { e.preventDefault(); e.stopPropagation(); } }, true);
+  // pause rendering while off screen
+  const io = "IntersectionObserver" in window ? new IntersectionObserver(es => es.forEach(en => { const S = spores3d.find(s => s.host === en.target); if (S && S.mv) S.mv.style.visibility = en.isIntersecting ? "" : "hidden"; })) : null;
+  const watch = setInterval(() => { spores3d.forEach(S => { if (io && !S.watched) { S.watched = true; io.observe(S.host); } }); }, 1000);
+  setTimeout(() => clearInterval(watch), 20000);
+}
+spore3dEvents();
+
 /* ===================== nav ===================== */
 let navActive = "";
 function renderNav(active) {
@@ -459,7 +620,7 @@ function openReader(id, opts = {}) {
       </div></div>
       ${(p.tags || []).length ? `<div class="r-tags">${p.tags.map(x => `<span class="tag">${esc(x)}</span>`).join("")}</div>` : ""}
       ${p.image ? `<img class="r-hero" src="${esc(p.image)}" alt="${esc(p.imageAlt || "")}">` : ""}
-      <div class="prose">${rhizomeMd(p.body || "")}</div>
+      <div class="prose" lang="${LANG === "en" && p.bodyEn ? "en" : "ko"}">${rhizomeMd(bodyOf(p))}</div>
       ${linked.length ? `<section class="r-linked"><h3 class="mono">${esc(t("linked"))}</h3>${linked.map(o => `<button data-read="${esc(o.id)}">${sporeImg(o, "mini")}<span>${esc(titleOf(o))}</span></button>`).join("")}</section>` : ""}
       <a class="pill-btn dark r-go" href="/spore/rhizome/#p=${encodeURIComponent(p.id)}">${esc(t("viewInRhizome"))} →</a>
     </div>`;
@@ -652,11 +813,12 @@ function rhizomeMd(src) {
 /* rhizome-md:end */
 
 /* ===================== exports ===================== */
+lensInit();
 const ready = Promise.all([document.fonts ? document.fonts.ready : null, load()]).then(() => { traceInit(); });
 const SP = window.SP = {
   TEXT, TOPICS, t, get lang() { return LANG; }, setLang, onLang: f => langHooks.push(f), onData: f => dataHooks.push(f),
   ready, get posts() { return POSTS; }, get links() { return LINKS; }, byId: id => BYID.get(id), linkedOf, get src() { return src; }, get data() { return DATA; },
-  titleOf, altTitleOf, no, catOf, catName, topicText, sporeCanvas, sporeSrc, sporeImg, network,
+  spore3d, titleOf, altTitleOf, summaryOf, bodyOf, no, catOf, catName, topicText, sporeCanvas, sporeSrc, sporeImg, network,
   renderNav, openReader, closeReader, readerHooks, get readerId() { return readerId; }, openAbout, closeAbout, toast, refresh,
   // pages may replace these (e.g. to keep the address in sync)
   read: id => openReader(id), unread: () => closeReader(),

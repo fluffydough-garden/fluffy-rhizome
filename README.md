@@ -31,7 +31,10 @@ fetch("https://rhizome-webzine.vercel.app/api/rhizome")
 - `public/index.html` 웹진(첫 화면) — 그래프와 갤러리 보기. 열 때마다 `/api/rhizome`에서 발행된 글을 읽어 옴. 발행된 글이 없으면 빈 화면, 서버에 못 닿으면 이 브라우저에 저장된 마지막 글(그것도 없으면 예시 글)을 보여줌. 탭으로 돌아오면 바뀐 글이 있는지 다시 확인함
 - `public/spore/` 포자 컨셉 웹진 **부드러운 침범 / Soft Invasion** (브랜치 `concept-spore`, 기본 영어 · 한국어 전환은 오른쪽 위 EN/KO, `?lang=ko`로도 열림)
   - `index.html` 메인: 1) 모든 포자(글 하나 = 포자 하나)가 떠 있는 대문 2) 포자 분류(의제별) 3) 리좀 미리보기 → 버튼으로 `rhizome/` 4) 끝없이 이어지는 글 목록. 글은 오른쪽 패널에서 열리고 주소 `#p=글ID`로 공유
-  - `media/spore-spin.glb` 대문 가운데서 천천히 도는 3D 포자(Higgsfield에서 Meshy 7로 만든 회전 모델, 텍스처를 1024px로 줄여 13.4MB → 2.4MB). `model-viewer`로 그리며, WebGL이 없으면 건너뛰고 ‘동작 줄이기’ 설정이면 멈춘 채로 보여요. 바꾸려면 같은 이름으로 덮어쓰면 돼요(애니메이션 이름 `SpinLoop`)
+  - `media/*.glb` 3D 포자 4개(Higgsfield · Meshy 7, 텍스처를 1024px로 줄임): `spore-spin`(대문, 2.4MB) · `spore-still`(포자 분류 옆, 초록 색조, 2.4MB) · `spore-quad`(리좀 미리보기 옆, 파란 색조, 4.4MB) · `spore-mobile`(아카이브 끝, 그리고 휴대폰에선 모든 자리, 1.1MB). 화면 가까이 와야 불러와요.
+    - 움직임은 `shared.js`의 `SP.spore3d`: 혼자 천천히 돌다가, 포자 모양 위에 올리면 멈추고, 끌면 그 방향으로 돌아가요(놓으면 관성으로 돌다 다시 혼자 회전). 휴대폰에선 손가락으로 돌려요. 포자 모양 위에서만 반응해서 뒤에 깔린 버튼은 그대로 눌려요.
+  - 화면은 어두운 바탕. 커서는 8px 렌즈 구슬(누를 수 있는 것 위에선 16px)이고, 밝은 글자·포자에 닿으면 뒤따르는 색 번짐이 비쳐 보여요(굴절은 Chrome 계열만).
+  - 영어 화면(기본)은 어드민에서 번역해 둔 영문 제목·요약·본문을 쓰고, 없으면 한국어 원문을 보여줘요.
   - `rhizome/index.html` 전체 리좀 인터랙션(균사 성장·균총·나의 균사). 주소 `#c=개념&p=글ID`
   - `shared.js` 두 페이지 공통: 한/영 문구(`TEXT`)와 포자 분류 이름·설명·색(`TOPICS`) — 다듬은 문구는 여기에 넣으면 됨. 데이터, 포자 그림(승인된 포자 이미지가 없으면 포자 속성으로 그린 임시 표본), 지난 5초 마우스 궤적(흰 점·흰 선), 글 패널, 리좀 배치, 마크다운
   - `shared.css` 공통 스타일과 글꼴
@@ -50,3 +53,9 @@ fetch("https://rhizome-webzine.vercel.app/api/rhizome")
 ```bash
 npx vercel@latest deploy --prod
 ```
+
+## 번역 (어드민)
+- 글 편집 화면의 **English · 영어판**에서 `한국어 → English` 또는 `English → 한국어`를 누르면 제목·요약·본문을 한 번에 옮겨 칸에 채워요. 확인하고 고친 뒤 저장해야 반영돼요. 이미 쓰인 칸을 덮어쓸 땐 먼저 물어봐요.
+- 서버 `api/translate.js`가 Claude(`claude-opus-5-5`)로 옮겨요. 마크다운·링크·이미지 주소는 그대로 둬요. 본문은 4만 자까지(1만 자면 1~2분).
+- Vercel 환경변수 `ANTHROPIC_API_KEY`가 필요해요(‘AI 추천’과 같은 키). 지금은 Production에만 있어서 미리보기 배포에선 “API 키가 없다”고 나와요.
+- 점검: `node --import ./scripts/spore-test/reg.mjs scripts/check-translate.mjs`

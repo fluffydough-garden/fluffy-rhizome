@@ -1072,7 +1072,7 @@ fetch("${apiUrl}")
 /* ---------- editor sheet ---------- */
 function openEditor(id) {
   const p = id ? postById(id) : null;
-  const d = p ? JSON.parse(JSON.stringify(p)) : { title: "", titleEn: "", slug: "", categoryId: sortedCats()[0]?.id || "", tags: [], links: [], date: today(), summary: "", body: "", status: "draft", weight: 5, image: "", imageAlt: "" };
+  const d = p ? JSON.parse(JSON.stringify(p)) : { title: "", titleEn: "", summaryEn: "", bodyEn: "", slug: "", categoryId: sortedCats()[0]?.id || "", tags: [], links: [], date: today(), summary: "", body: "", status: "draft", weight: 5, image: "", imageAlt: "" };
   delete d.id;
   d.tags ||= []; d.links ||= [];
   const linked = id ? neighbors(id) : new Set();
@@ -1106,6 +1106,14 @@ function openEditor(id) {
       </div>
       <div class="field"><label for="f-summary">요약</label><textarea id="f-summary" class="textarea" rows="2" data-field="summary" placeholder="노드에 마우스를 올렸을 때 보일 한두 문장" ${ro}>${esc(d.summary)}</textarea></div>
 
+      <div class="section-title">English · 영어판</div>
+      ${E.ro ? "" : `<div class="card suggest" id="tr-box"></div>`}
+      <div class="field"><label for="f-summaryEn">영문 요약</label><textarea id="f-summaryEn" class="textarea" rows="2" data-field="summaryEn" lang="en" placeholder="Summary shown in the English version" ${ro}>${esc(d.summaryEn || "")}</textarea></div>
+      <div class="field">
+        <div class="label-row"><label for="f-bodyEn">영문 본문</label><span class="spacer"></span><span class="hint"><span id="char-count-en" class="num">${(d.bodyEn || "").length.toLocaleString()}</span>자</span></div>
+        <textarea id="f-bodyEn" class="textarea body" data-field="bodyEn" lang="en" placeholder="영어 화면(기본 언어)에서 보일 본문. 비워 두면 한국어 본문이 보여요." ${ro}>${esc(d.bodyEn || "")}</textarea>
+      </div>
+
       <div class="section-title">리좀</div>
       ${E.ro ? "" : `<div class="card suggest" id="suggest-box"></div>`}
       <div class="field"><label for="f-tag">태그</label>
@@ -1123,7 +1131,7 @@ function openEditor(id) {
       ${E.ro ? "" : `<button class="btn primary" data-action="save-post" id="save-btn">${icon("check")}저장</button>`}
     </div>
   </aside>`;
-  renderChips(); renderLinks(); renderImage(); renderSuggest();
+  renderChips(); renderLinks(); renderImage(); renderSuggest(); renderTranslate();
   setTimeout(() => { const t = $("#f-title"); if (t && !id) t.focus(); }, 30);
 }
 function renderChips() {
@@ -1141,6 +1149,49 @@ function renderLinks() {
   }).join("") : `<div class="picker-empty">${S.posts.length <= 1 && !q ? "연결할 다른 글이 아직 없어요." : "맞는 글이 없어요."}</div>`;
   $("#link-count").textContent = E.linked.size;
 }
+/* ---------- 번역 (한국어 ↔ 영어) ---------- */
+// 제목·요약·본문을 한 번에 옮겨서 칸에 채움. 저장은 따로 — 고쳐 보고 저장.
+function renderTranslate() {
+  const box = $("#tr-box"); if (!box) return;
+  const tr = E.tr || {};
+  const busy = to => tr.loading === to ? "disabled" : tr.loading ? "disabled" : "";
+  box.innerHTML = `<div class="label-row"><div><b style="font-weight:500">${icon("sparkle")} 번역</b>
+      <p class="hint">${tr.loading ? `번역하는 중이에요. 긴 글은 1~2분 걸려요.` : `제목·요약·본문을 한 번에 옮겨서 칸에 채워요. 확인하고 고친 뒤 저장하면 반영돼요.`}</p></div><span class="spacer"></span>
+    <button class="btn primary sm" data-action="translate" data-to="en" ${busy("en")}>${tr.loading === "en" ? "번역하는 중…" : "한국어 → English"}</button>
+    <button class="btn outline sm" data-action="translate" data-to="ko" ${busy("ko")}>${tr.loading === "ko" ? "번역하는 중…" : "English → 한국어"}</button></div>
+    ${tr.error ? `<p class="error">${esc(tr.error)}</p>` : ""}${tr.done ? `<p class="hint">${esc(tr.done)}</p>` : ""}`;
+}
+async function runTranslate(to) {
+  if (!E || E.ro || (E.tr && E.tr.loading)) return;
+  const d = E.d, K = { title: "title", summary: "summary", body: "body" }, EN = { title: "titleEn", summary: "summaryEn", body: "bodyEn" };
+  const from = to === "en" ? K : EN, into = to === "en" ? EN : K;
+  const src = { title: d[from.title] || "", summary: d[from.summary] || "", body: d[from.body] || "" };
+  if (!src.title.trim() && !src.summary.trim() && !src.body.trim()) {
+    toast("옮길 내용이 없어요", to === "en" ? "한국어 제목·요약·본문을 먼저 써 주세요." : "영문 제목·요약·본문을 먼저 써 주세요.", "err"); return; }
+  const filled = ["title", "summary", "body"].filter(k => src[k].trim() && String(d[into[k]] || "").trim());
+  if (filled.length) {
+    const ok = await confirmDialog({ title: to === "en" ? "영문 칸을 새 번역으로 바꿀까요?" : "한국어 칸을 새 번역으로 바꿀까요?",
+      desc: "이미 쓰여 있는 내용이 번역 결과로 바뀌어요. 저장하기 전까지는 취소로 되돌릴 수 있어요.", confirm: "바꾸기", destructive: true });
+    if (!ok || !E) return;
+  }
+  E.tr = { loading: to }; renderTranslate();
+  try {
+    const r = await api("/api/translate", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ to, ...src }) });
+    if (!E) return;
+    ["title", "summary", "body"].forEach(k => { if (!src[k].trim()) return; d[into[k]] = r[k] || ""; const el = $("#f-" + into[k]); if (el) el.value = d[into[k]]; });
+    if (!E.slugTouched) { d.slug = slugify(d.titleEn || d.title); $("#f-slug").value = d.slug; }
+    $("#char-count").textContent = countChars(d.body).toLocaleString();
+    $("#char-count-en").textContent = (d.bodyEn || "").length.toLocaleString();
+    E.dirty = true;
+    E.tr = { done: (to === "en" ? "영어로" : "한국어로") + " 옮겼어요. 확인하고 저장해 주세요." };
+    toast("번역했어요", "저장해야 웹진에 반영돼요.");
+  } catch (e) {
+    if (!E) return;
+    const msg = { 503: "서버에 Claude API 키가 설정되지 않았거나 잘못됐어요.", 429: "요청이 많아요. 잠시 후 다시 눌러 주세요.", 413: "글이 너무 길어서 한 번에 옮기지 못했어요. 본문을 나눠서 옮겨 주세요.", 401: "다시 로그인해 주세요." }[e.code] || "번역하지 못했어요. 잠시 후 다시 시도해 주세요.";
+    E.tr = { error: msg };
+  } finally { if (E) { E.tr.loading = false; renderTranslate(); } }
+}
+
 /* ---------- AI 추천 (키워드 + 연결) ---------- */
 function renderSuggest() {
   const box = $("#suggest-box"); if (!box) return;
@@ -1526,6 +1577,7 @@ document.addEventListener("click", async e => {
     case "pick-image": if (E && !E.ro && !E.uploading) $("#img-file").click(); break;
     case "rm-image": E.d.image = ""; E.d.imageAlt = ""; E.dirty = true; renderImage(); break;
     case "suggest": runSuggest(); break;
+    case "translate": runTranslate(t.dataset.to); break;
     case "spore-filter": SPV.filter = t.dataset.v; renderView(); break;
     case "spore-generate": sporeGenerate(id); break;
     case "spore-approve": if (await sporeAct(id, "approve")) toast("승인했어요", "1~2분 안에 웹진에 나와요.", "ok"); break;
@@ -1608,6 +1660,7 @@ document.addEventListener("input", e => {
     if (f === "slug") E.slugTouched = true;
     if ((f === "title" || f === "titleEn") && !E.slugTouched) { E.d.slug = slugify(E.d.titleEn || E.d.title); $("#f-slug").value = E.d.slug; }
     if (f === "body") $("#char-count").textContent = countChars(t.value).toLocaleString();
+    if (f === "bodyEn") $("#char-count-en").textContent = t.value.length.toLocaleString();
     if (f === "weight") $("#weight-out").textContent = t.value;
   }
 });

@@ -30,7 +30,7 @@ export async function GET(req) {
   const node = p => ({
     id: p.id, slug: p.slug || slugify(p.titleEn || p.title), title: p.title || "", titleEn: p.titleEn || "",
     category: p.categoryId || null, tags: p.tags || [], date: p.date || "", weight: Number(p.weight) || 5,
-    summary: p.summary || "", image: p.image || null, imageAlt: p.imageAlt || "",
+    summary: p.summary || "", summaryEn: p.summaryEn || "", bodyEn: p.bodyEn || "", image: p.image || null, imageAlt: p.imageAlt || "",
     body: p.body || "", bodyHtml: rhizomeMd(p.body || ""), updatedAt: p.updatedAt || "",
     // 포자 이미지: 승인된 것만 공개. 속성은 웹진 표현(색·형태)에 쓸 수 있게 함께
     spore: p.spore ? {
