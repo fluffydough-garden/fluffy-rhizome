@@ -16,7 +16,7 @@ export { THREE };
 const REDUCE = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 // 돌 불투명도: 0.88 = 단단한 광물에 빛이 살짝 비침 (0.75 = 더 유리 같음, 0.95 = 거의 불투명) — o88 세트 값
-export const OPACITY = .88;
+export const OPACITY = .92;
 // 유리질 보석 재질 (o88 gem 세트의 값: iridescence .85 · IOR 1.5 · 180–620nm · clearcoat .75/.05 · emissive .14)
 export const GEM = { opacity: OPACITY, iridescence: .85, iridescenceIOR: 1.5, thickness: [180, 620], clearcoat: .75, clearcoatRoughness: .05, emissive: .14 };
 
