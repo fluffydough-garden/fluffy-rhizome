@@ -1,4 +1,4 @@
-/* 부드러운 지층 · Soft Strata — 3D 돌 (three.js)
+/* 부드러운 지층 · Fluffy Strata — 3D 돌 (three.js)
    - load(stone)      : 돌 모양 하나를 불러와 크기 1(가장 긴 변)로 맞춘 원본 + 물리용 외곽 점들
    - makeStone(stone) : 글 하나의 돌(재질: 광택 돌 또는 유리질 보석). group > body(덜걱거림) > mesh
    - Rattle           : 마우스를 올리면 덜걱거리며 살짝 떠오르고, 떼면 툭 내려앉는 움직임

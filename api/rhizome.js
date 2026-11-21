@@ -1,5 +1,6 @@
 import { readDb } from "../lib/store.js";
 import { rhizomeMd } from "../lib/markdown.js";
+import { dnaValues, dnaSummary, colorRule } from "../lib/stone.js";
 
 // 공개 API — 다른 웹페이지에서 fetch로 읽어 가는 용도. 발행된 글만 나감.
 //   GET /api/rhizome               전체 (categories, nodes, links)
@@ -38,7 +39,10 @@ export async function GET(req) {
       contentType: p.spore.contentType || null, primaryTopic: p.spore.primaryTopic || null, secondaryTopic: p.spore.secondaryTopic || null,
       complexity: p.spore.complexity ?? null, connectivity: p.spore.connectivity ?? null, symmetry: p.spore.symmetry ?? null,
       morphology: p.spore.morphology || "", palette: p.spore.palette || [], seed: p.spore.seed || ""
-    } : null
+    } : null,
+    // 돌 DNA: 값만 공개(근거 인용·확신도는 어드민에만). confirmed = 편집자가 확인함
+    stone: p.stone && p.stone.dna ? { ...dnaValues(p.stone.dna), confirmed: !!p.stone.confirmed, summary: dnaSummary(p.stone.dna),
+      colors: (r => r ? [r.primary.hex, ...(r.secondary ? [r.secondary.hex] : [])] : [])(colorRule(p.stone.dna)), version: p.stone.version || "" } : null
   });
 
   const one = q.get("slug") || q.get("id");

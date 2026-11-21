@@ -348,6 +348,38 @@ tr.clickable{cursor:pointer}
 .spin{width:14px;height:14px;border-radius:50%;border:2px solid var(--border);border-top-color:var(--foreground);animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .sc-chips{display:flex;flex-wrap:wrap;gap:6px}
+/* 태그 고르기 · 태그 관리 */
+.tag-pick{display:flex;flex-wrap:wrap;gap:6px;max-height:148px;overflow:auto;padding:2px 0}
+.tag-pick button{display:inline-flex;align-items:center;gap:4px;height:26px;padding:0 10px;border-radius:999px;border:1px solid var(--border);font-size:12.5px;background:var(--background);cursor:pointer}
+.tag-pick button:hover{background:var(--muted)}
+.tag-pick button .n{color:var(--muted-foreground);font-size:11px}
+.tag-pick button.new{border-style:dashed}
+.tag-pick .none{font-size:12.5px;color:var(--muted-foreground)}
+.tag-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.tag-bar .search{flex:1;min-width:200px}
+.tag-name{font-weight:500}
+/* 돌 DNA */
+.st-swatch{position:relative;height:72px;border-radius:12px;overflow:hidden;display:flex;align-items:flex-end;padding:10px 12px;color:#fff;font-size:12.5px;font-weight:500;text-shadow:0 1px 2px rgba(0,0,0,.35)}
+.st-swatch .sec{position:absolute;right:0;top:0;bottom:0;width:20%}
+.st-swatch.veins .sec{width:auto;left:0;background:none!important}
+.st-swatch.veins .sec::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(115deg,transparent 0 22px,var(--vc) 22px 25px,transparent 25px 47px)}
+.st-swatch span{position:relative}
+.st-attrs{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:0;font-size:13px}
+.st-attrs dt{color:var(--muted-foreground)}
+.st-attrs dd{margin:0}
+.st-attrs .low{color:var(--warning,#b45309)}
+.sc-st.st-unconfirmed{background:color-mix(in srgb,var(--warning) 22%,var(--muted))}
+.sc-st.st-confirmed{background:color-mix(in srgb,var(--success) 20%,var(--muted))}
+.dna-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 10px;padding:12px 0;border-top:1px solid var(--border)}
+.dna-row label{font-weight:500;font-size:13px}
+.dna-row .select,.dna-row .input{grid-column:1/-1}
+.dna-row q{grid-column:1/-1;font-size:12.5px;color:var(--muted-foreground);quotes:"“" "”"}
+.conf{font-size:11.5px;padding:2px 8px;border-radius:999px;background:var(--muted);white-space:nowrap;align-self:center}
+.conf.low{background:color-mix(in srgb,var(--warning) 25%,var(--muted));font-weight:600}
+.dna-color{display:flex;gap:10px;align-items:center;font-size:13px}
+.dna-color i{width:28px;height:28px;border-radius:8px;flex:none}
+.dna-prompt{white-space:pre-wrap;max-height:240px;overflow:auto;font-size:12px}
+.dna-args{margin:0;padding-left:1.2em;font-size:13px}
 .sc-chips .chip{height:30px;padding:0 12px;border-radius:999px;font-size:13px}
 .sc-params{font-size:12px;color:var(--muted-foreground);margin-top:-6px}
 .sc-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
@@ -457,6 +489,8 @@ const ICON = {
   eye:'<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
   image:'<rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.09-3.09a2 2 0 0 0-2.82 0L6 21"/>',
   lock:'<rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  hash:'<line x1="4" x2="20" y1="9" y2="9"/><line x1="4" x2="20" y1="15" y2="15"/><line x1="10" x2="8" y1="3" y2="21"/><line x1="16" x2="14" y1="3" y2="21"/>',
+  gem:'<path d="M6 3h12l4 6-10 13L2 9Z"/><path d="M11 3 8 9l4 13 4-13-3-6"/><path d="M2 9h20"/>',
   sparkle:'<path d="M9.94 14.06 4 20"/><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9Z"/>'
 };
 const icon = (n, cls = "ic") => `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[n]}</svg>`;
@@ -472,9 +506,9 @@ const swatchName = hex => (SWATCHES.find(s => s.hex === String(hex || "").toLowe
 const OLD_COLOR = "예전 색 · 웹진에서는 가까운 색으로 보여요";
 
 /* ---------- state ---------- */
-const VIEWS = { posts: "글", spores: "포자 이미지", categories: "카테고리", export: "내보내기" };
+const VIEWS = { posts: "글", stones: "돌 DNA", categories: "카테고리", tags: "태그", export: "내보내기" };   // 포자 이미지 화면은 뺐어요(코드와 /api/spore는 남아 있음)
 const S = {
-  posts: [], cats: [], view: viewFromHash(),
+  posts: [], cats: [], tags: [], view: viewFromHash(),
   q: "", fcat: "all", fstatus: "all", sort: "updated",
   mode: "loading", // loading | live | stale | local | error
   canWrite: true, exportTab: "json", exportPublishedOnly: true
@@ -517,7 +551,7 @@ async function api(path, opts = {}) {
   return data;
 }
 function applyDb(d) {
-  S.posts = d.posts || []; S.cats = d.categories || []; anyData = true;
+  S.posts = d.posts || []; S.cats = d.categories || []; S.tags = d.tags || []; anyData = true;
   if (S.mode !== "live") { S.mode = "live"; renderStatus(); }
 }
 async function connect(quiet) {
@@ -619,8 +653,8 @@ function refresh() {
   else renderView();
 }
 function renderNav() {
-  const counts = { posts: S.posts.length, spores: S.posts.filter(p => (p.spore || {}).imageStatus === "review").length || null, categories: S.cats.length };
-  const ic = { posts: "file", spores: "sparkle", categories: "folder", export: "share" };
+  const counts = { posts: S.posts.length, stones: S.posts.filter(p => p.stone && !p.stone.confirmed).length || null, tags: allTags().length, spores: S.posts.filter(p => (p.spore || {}).imageStatus === "review").length || null, categories: S.cats.length };
+  const ic = { posts: "file", stones: "gem", spores: "sparkle", categories: "folder", tags: "hash", export: "share" };
   $("#nav").innerHTML = `<div class="nav-label">콘텐츠</div>` + Object.entries(VIEWS).map(([k, label]) =>
     `<a href="#${k}" ${S.view === k ? 'aria-current="page"' : ""}>${icon(ic[k])}<span>${label}</span>${counts[k] != null ? `<span class="count">${counts[k]}</span>` : ""}</a>`).join("");
   $("#crumb").textContent = VIEWS[S.view];
@@ -643,8 +677,10 @@ function banner() {
 function renderView() {
   const v = $("#view");
   if (S.view === "posts") { v.innerHTML = postsView(); updatePosts(); }
+  else if (S.view === "stones") v.innerHTML = stonesView();
   else if (S.view === "spores") { v.innerHTML = sporesView(); schedulePoll(); }
   else if (S.view === "categories") v.innerHTML = catsView();
+  else if (S.view === "tags") v.innerHTML = tagsView();
   else v.innerHTML = exportView();
 }
 
@@ -808,6 +844,201 @@ function sporeHowtoDialog() {
 { "action": "fail", "id": "&lt;articleId&gt;", "error": "이유" }</pre></li>
       <li><b>검토·승인</b><span>여기서 ‘승인’을 누르면 공개 API의 <span class="mono">spore.image</span>로 나가고 웹진에 보여요.</span></li>
     </ol>
+    <div class="dialog-foot"><button class="btn primary" data-action="dialog-cancel">닫기</button></div>`, true);
+}
+
+
+/* ---------- 돌 DNA ----------
+   전시 리뷰를 돌의 6가지 속성(색=주제 · 형태=관람 경험 · 무늬=해석 관점 · 표면=비평 태도 · 내포물=논점 수 · 움직임=서술 방향)으로.
+   ‘AI 분석’은 정해진 값 중에서만 골라요(lib/stone.js). 확신도 0.7 미만 항목이 있으면 자동 확정하지 않고 ‘확인 필요’로 둬요.
+   이미지 프롬프트(정적인 돌)와 Higgsfield 영상 프롬프트를 만들어 복사할 수 있어요. 원문을 붙여넣어 분석만 할 수도 있어요. */
+let STX = null;                                   // /api/stone?schema=1
+const STV = { filter: "all", busy: new Set(), bulk: false };
+let DX = null;                                    // 열려 있는 DNA 편집 창 { id|null, dna, arguments, note, model, analyzedAt, out }
+const DNA_KEYS = ["primary_theme", "secondary_theme", "experience", "interpretive_lens", "critical_stance", "argument_count", "narrative_direction", "exhibition_format"];
+async function loadStoneSchema() {
+  if (STX) return;
+  try { STX = await api("/api/stone?schema=1"); if (S.view === "stones") renderView(); } catch {}
+}
+const stoneState = p => !p.stone ? "none" : p.stone.confirmed ? "confirmed" : "unconfirmed";
+const ST_ST = { none: "미분석", unconfirmed: "확인 필요", confirmed: "확정" };
+const dv = (d, k) => d && d[k] ? d[k].value : "";
+function optList(k) {
+  if (!STX) return {};
+  return { primary_theme: STX.themes, secondary_theme: STX.themes, experience: STX.experiences, interpretive_lens: STX.patterns,
+    critical_stance: STX.stances, narrative_direction: STX.motions, exhibition_format: STX.formats }[k] || {};
+}
+// 값 → 사람이 읽는 이름
+function dnaLabel(k, v) {
+  if (v === "" || v === undefined || v === null) return k === "secondary_theme" ? "없음" : "—";
+  if (k === "argument_count") return `${v}개 · ${v >= 3 ? "여러 내포물이 모인 복합 구조" : v === 2 ? "두 종류의 광물 집합" : "드문드문한 작은 결정"}`;
+  const o = optList(k)[v]; if (!o) return v;
+  if (k === "experience") return `${o.ko} · ${o.shape}`;
+  if (k === "interpretive_lens") return `${o.ko} · ${o.lens}`;
+  if (k === "critical_stance") return `${o.surface} · ${o.ko}`;
+  if (k === "narrative_direction") return `${o.camera} · ${o.ko}`;
+  return o.ko;
+}
+function colorOf(d) {
+  const t1 = STX?.themes?.[dv(d, "primary_theme")], t2 = STX?.themes?.[dv(d, "secondary_theme")];
+  if (!t1) return null;
+  const mode = !t2 || t2 === t1 ? "single" : (Number(dv(d, "argument_count")) || 1) >= 3 ? "veins" : "blend";
+  return { t1, t2: mode === "single" ? null : t2, mode };
+}
+function swatch(d) {
+  const c = colorOf(d); if (!c) return `<div class="st-swatch" style="background:var(--muted);color:var(--muted-foreground);text-shadow:none"><span>아직 색이 없어요</span></div>`;
+  return `<div class="st-swatch ${c.mode}" style="background:${c.t1.hex}">${c.t2 ? `<i class="sec" style="background:${c.t2.hex};--vc:${c.t2.hex}"></i>` : ""}<span>${esc(c.t1.ko)}${c.t2 ? ` + ${esc(c.t2.ko.split(" · ")[0])} ${c.mode === "veins" ? "광맥" : "20%"}` : ""}</span></div>`;
+}
+function stonesView() {
+  loadStoneSchema();
+  const posts = [...S.posts].sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
+  const cnt = k => k === "all" ? posts.length : posts.filter(p => stoneState(p) === k).length;
+  const shown = posts.filter(p => STV.filter === "all" || stoneState(p) === STV.filter);
+  return `
+  <div class="page-head">
+    <div><h1>돌 DNA</h1><p>글을 읽고 돌의 속성을 골라 이미지·영상 프롬프트를 만들어요. 색=주제, 형태=관람 경험, 무늬=해석 관점, 표면=비평 태도, 내포물=논점 수, 움직임=서술 방향.</p></div>
+    <div class="actions">
+      <button class="btn outline" data-action="stone-legend">${icon("eye")}분류표</button>
+      <button class="btn outline" data-action="stone-paste">${icon("file")}원문 붙여넣어 분석</button>
+      ${S.canWrite ? `<button class="btn primary" data-action="stone-bulk" ${STV.bulk || !cnt("none") ? "disabled" : ""}>${icon("sparkle")}${STV.bulk ? "분석하는 중…" : `미분석 ${cnt("none")}편 모두 분석`}</button>` : ""}
+    </div>
+  </div>
+  ${banner()}
+  ${STX && !STX.ai ? `<div class="alert warn">${icon("alert")}<div><b>이 배포에 Claude API 키가 없어요</b><span class="muted">AI 분석은 쓸 수 없지만, 직접 속성을 골라 프롬프트를 만들 수는 있어요.</span></div></div>` : ""}
+  <div class="toolbar"><div class="tabs" role="tablist">${[["all", "전체"], ["none", "미분석"], ["unconfirmed", "확인 필요"], ["confirmed", "확정"]].map(([k, l]) =>
+    `<button role="tab" aria-selected="${STV.filter === k}" data-action="stone-filter" data-v="${k}">${l}<span class="muted num">${cnt(k)}</span></button>`).join("")}</div></div>
+  <div class="spore-grid">${shown.map(stoneCard).join("") || `<p class="muted" style="padding:40px 0">해당하는 글이 없어요.</p>`}</div>`;
+}
+function stoneCard(p) {
+  const st = stoneState(p), d = p.stone?.dna || {}, busy = STV.busy.has(p.id), w = S.canWrite;
+  const low = new Set(st === "confirmed" ? [] : DNA_KEYS.filter(k => d[k] && d[k].value !== "" && d[k].confidence < (STX?.confidenceMin ?? .7)));   // 확정하면 편집자가 확인한 것
+  const row = (k, label) => `<dt>${label}</dt><dd class="${low.has(k) ? "low" : ""}">${esc(dnaLabel(k, dv(d, k)))}${low.has(k) ? " · 확인 필요" : ""}</dd>`;
+  return `<article class="card spore-card" data-stone-card="${esc(p.id)}">
+    <div class="sc-head"><div><span class="sc-no mono">ARTICLE / ${articleNo(p)}</span><h3>${esc(p.title || "제목 없음")}</h3></div><span class="badge sc-st st-${st}">${ST_ST[st]}</span></div>
+    ${swatch(d)}
+    ${p.stone ? `<dl class="st-attrs">${row("experience", "형태")}${row("interpretive_lens", "무늬")}${row("critical_stance", "표면")}${row("argument_count", "내포물")}${row("narrative_direction", "움직임")}${low.has("primary_theme") || low.has("secondary_theme") ? row(low.has("primary_theme") ? "primary_theme" : "secondary_theme", "색") : ""}</dl>`
+      : `<p class="hint">아직 분석하지 않았어요. ‘AI 분석’을 누르거나 직접 속성을 골라 주세요.</p>`}
+    <div class="sc-actions">
+      ${w ? `<button class="btn ${p.stone ? "outline" : "primary"}" data-action="stone-analyze" data-id="${esc(p.id)}" ${busy || (STX && !STX.ai) ? "disabled" : ""}>${busy ? "읽는 중…" : p.stone ? "다시 분석" : "AI 분석"}</button>` : ""}
+      <button class="btn ${st === "unconfirmed" ? "primary" : "outline"}" data-action="stone-edit" data-id="${esc(p.id)}" ${busy ? "disabled" : ""}>${st === "unconfirmed" ? "검토하기" : p.stone ? "속성·프롬프트" : "직접 고르기"}</button>
+    </div>
+  </article>`;
+}
+function renderStoneCard(id) {
+  const el = $(`[data-stone-card="${CSS.escape(id)}"]`), p = postById(id);
+  if (el && p) el.outerHTML = stoneCard(p); else if (S.view === "stones") renderView();
+}
+const stoneErr = e => e.code === 401 ? "다시 로그인해 주세요." : e.message === "no_api_key" ? "이 배포에 Claude API 키가 없어요." : e.message === "bad_api_key" ? "Claude API 키가 맞지 않거나 막혔어요."
+  : e.code === 429 ? "요청이 많아요. 잠시 후 다시 눌러 주세요." : e.message === "empty" ? "본문이 비어 있어요." : "분석하지 못했어요. 잠시 후 다시 시도해 주세요.";
+const stonePost = body => api("/api/stone", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+// 글 하나 분석 → 바로 저장(확신도가 다 0.7 이상이고 빠진 값이 없으면 확정, 아니면 ‘확인 필요’)
+async function stoneAnalyze(id, quiet) {
+  STV.busy.add(id); renderStoneCard(id);
+  try {
+    const r = await stonePost({ action: "analyze", id });
+    const s = await stonePost({ action: "save", id, dna: r.dna, confirmed: r.complete && !r.low.length, arguments: r.arguments, note: r.note, model: r.model, analyzedAt: new Date().toISOString() });
+    const p = postById(id); if (p) p.stone = s.stone;
+    if (!quiet) toast(s.stone.confirmed ? "분석해서 확정했어요" : "분석했어요 · 확인이 필요해요", s.stone.confirmed ? r.summary : `확신도가 낮은 항목 ${r.low.length}개를 검토해 주세요.`, "ok");
+    return true;
+  } catch (e) { toast("분석하지 못했어요", stoneErr(e), "err"); if (e.code === 401) loginDialog(true); return false; }
+  finally { STV.busy.delete(id); STV.bulk ? renderStoneCard(id) : renderView(); renderNav(); }
+}
+async function stoneBulk() {
+  const ids = S.posts.filter(p => !p.stone).map(p => p.id); if (!ids.length) return;
+  STV.bulk = true; renderView();
+  let done = 0;
+  for (const id of ids) { if (!(await stoneAnalyze(id, true))) break; done++; }
+  STV.bulk = false; renderView();
+  toast(`${done}편을 분석했어요`, "‘확인 필요’ 탭에서 확신도가 낮은 항목을 검토해 주세요.", "ok");
+}
+// 편집 창: 글의 저장된 DNA(또는 붙여넣기 분석 결과)를 고르고, 프롬프트를 보고, 저장
+function stoneEdit(id, fromPaste) {
+  if (id) { const p = postById(id); if (!p) return; const s = p.stone || {};
+    DX = { id, title: p.title, dna: JSON.parse(JSON.stringify(s.dna || {})), arguments: s.arguments || [], note: s.note || "", model: s.model || "", analyzedAt: s.analyzedAt || null, out: null }; }
+  else DX = { ...fromPaste, id: null };
+  renderStoneDialog(); refreshStonePrompts();
+}
+function renderStoneDialog() {
+  const d = DX.dna, ro = DX.id && !S.canWrite ? "disabled" : "", min = STX?.confidenceMin ?? .7;
+  const fieldRow = k => {
+    const f = STX?.fields?.[k] || { ko: k }, cur = d[k] || {}, low = cur.value !== "" && cur.value !== undefined && cur.confidence !== undefined && cur.confidence < min;
+    const input = k === "argument_count"
+      ? `<select class="select" id="dna-${k}" data-dna="${k}" ${ro}>${[1, 2, 3, 4, 5].map(n => `<option value="${n}" ${Number(cur.value) === n ? "selected" : ""}>${esc(dnaLabel(k, n))}</option>`).join("")}${cur.value ? "" : `<option value="" selected>고르기</option>`}</select>`
+      : `<select class="select" id="dna-${k}" data-dna="${k}" ${ro}>${f.optional ? `<option value="">없음</option>` : cur.value ? "" : `<option value="" selected>고르기</option>`}${Object.keys(optList(k)).map(v => `<option value="${esc(v)}" ${cur.value === v ? "selected" : ""}>${esc(dnaLabel(k, v))}</option>`).join("")}</select>`;
+    return `<div class="dna-row"><label for="dna-${k}">${esc(f.ko)}</label>${cur.confidence !== undefined && cur.value !== "" ? `<span class="conf ${low ? "low" : ""}" title="AI 확신도">${low ? "확인 필요 · " : ""}${Math.round(cur.confidence * 100)}%</span>` : "<span></span>"}${input}${cur.evidence ? `<q>${esc(cur.evidence)}</q>` : ""}</div>`;
+  };
+  const o = DX.out, c = colorOf(d);
+  openDialog(`<div><h2 id="dlg-title">돌 DNA${DX.title ? ` · ${esc(DX.title)}` : ""}</h2><p class="desc">${DX.id ? "AI가 고른 값과 근거 문장이에요. 확신도가 낮은 항목을 확인하고 저장하면 확정돼요." : "붙여넣은 원문의 분석 결과예요. 저장되지 않으니 프롬프트를 복사해 쓰세요."}${DX.model ? ` <span class="muted mono" style="font-size:11px">${esc(DX.model)}</span>` : ""}</p></div>
+    ${swatch(d)}
+    ${o?.color ? `<p class="hint" style="margin-top:-6px">${esc(o.color.ko)}</p>` : ""}
+    ${DX.note ? `<div class="alert">${icon("alert")}<div><b>AI 메모</b><span class="muted">${esc(DX.note)}</span></div></div>` : ""}
+    <div>${DNA_KEYS.map(fieldRow).join("")}</div>
+    ${DX.arguments?.length ? `<div class="field"><label>핵심 논점</label><ol class="dna-args">${DX.arguments.map(a => `<li>${esc(a)}</li>`).join("")}</ol></div>` : ""}
+    <div class="field"><label>이미지 프롬프트 <span class="muted" style="font-weight:400">· 정적인 돌 원본</span></label><pre class="code dna-prompt" id="dna-img">${esc(o?.imagePrompt || "만드는 중…")}</pre></div>
+    <div class="field"><label>영상 프롬프트 <span class="muted" style="font-weight:400">· Higgsfield 이미지→영상, 위 이미지를 시작 프레임으로</span></label><pre class="code dna-prompt" id="dna-vid">${esc(o?.videoPrompt || "만드는 중…")}</pre></div>
+    <div class="dialog-foot" style="flex-wrap:wrap">
+      <button class="btn outline" data-action="stone-copy" data-v="img">${icon("copy")}이미지 프롬프트</button>
+      <button class="btn outline" data-action="stone-copy" data-v="vid">${icon("copy")}영상 프롬프트</button>
+      <button class="btn outline" data-action="stone-copy" data-v="json">${icon("copy")}JSON</button>
+      <span style="flex:1"></span>
+      <button class="btn outline" data-action="dialog-cancel">닫기</button>
+      ${DX.id && S.canWrite ? `${postById(DX.id)?.stone ? `<button class="btn ghost danger" data-action="stone-clear">${icon("trash")}지우기</button>` : ""}<button class="btn primary" data-action="stone-save" ${c && o?.complete ? "" : "disabled"}>${icon("check")}확인하고 저장</button>` : ""}
+    </div>`, true);
+}
+let dxTimer = 0;
+async function refreshStonePrompts() {
+  if (!DX) return; const me = DX;
+  try { me.out = await stonePost({ action: "prompts", dna: me.dna }); } catch { return; }
+  if (DX !== me || !$("#dna-img")) return;
+  $("#dna-img").textContent = me.out.imagePrompt; $("#dna-vid").textContent = me.out.videoPrompt;
+  const save = $('[data-action="stone-save"]'); if (save) save.disabled = !me.out.complete;
+  const sw = $("#dialog-root .st-swatch"); if (sw) sw.outerHTML = swatch(me.dna);
+  const hint = $("#dialog-root .st-swatch + .hint"); if (hint) hint.textContent = me.out.color?.ko || "";
+  else if (me.out.color) $("#dialog-root .st-swatch").insertAdjacentHTML("afterend", `<p class="hint" style="margin-top:-6px">${esc(me.out.color.ko)}</p>`);
+}
+async function stoneSave() {
+  const id = DX.id; closeDialog(false);
+  STV.busy.add(id); renderStoneCard(id);
+  try {
+    const r = await stonePost({ action: "save", id, dna: DX.dna, confirmed: true, arguments: DX.arguments, note: DX.note, model: DX.model, analyzedAt: DX.analyzedAt });
+    const p = postById(id); if (p) p.stone = r.stone;
+    toast("확정했어요", r.summary, "ok");
+  } catch (e) { toast("저장하지 못했어요", stoneErr(e), "err"); }
+  finally { STV.busy.delete(id); STV.bulk ? renderStoneCard(id) : renderView(); renderNav(); }
+}
+async function stoneClear() {
+  const id = DX.id; closeDialog(false);
+  if (!(await confirmDialog({ title: "돌 DNA를 지울까요?", desc: "분석 결과와 근거가 지워져요. 다시 분석할 수 있어요.", confirm: "지우기", destructive: true }))) return;
+  try { await stonePost({ action: "clear", id }); const p = postById(id); if (p) delete p.stone; toast("지웠어요", "", "ok"); } catch (e) { toast("지우지 못했어요", stoneErr(e), "err"); }
+  renderView(); renderNav();
+}
+function stonePasteDialog() {
+  openDialog(`<div><h2 id="dlg-title">원문 붙여넣어 분석</h2><p class="desc">어드민에 올리지 않은 리뷰도 분석해서 프롬프트를 받을 수 있어요. 저장되지 않아요.</p></div>
+    <div class="field"><label for="sp-title">제목</label><input class="input" id="sp-title" placeholder="리뷰 제목"></div>
+    <div class="field"><label for="sp-info">전시 정보 <span class="muted" style="font-weight:400">· 선택 (전시명, 작가, 기간, 장소)</span></label><input class="input" id="sp-info"></div>
+    <div class="field"><label for="sp-body">본문</label><textarea class="textarea" id="sp-body" rows="12" placeholder="리뷰 본문을 붙여넣어 주세요"></textarea></div>
+    <div class="dialog-foot"><button class="btn outline" data-action="dialog-cancel">닫기</button><button class="btn primary" data-action="stone-paste-run" ${STX && !STX.ai ? "disabled" : ""}>${icon("sparkle")}분석</button></div>`, true);
+}
+async function stonePasteRun(btn) {
+  const title = $("#sp-title").value.trim(), info = $("#sp-info").value.trim(), body = $("#sp-body").value;
+  if (!body.trim()) { $("#sp-body").focus(); toast("본문을 붙여넣어 주세요", "", "err"); return; }
+  btn.disabled = true; btn.textContent = "읽는 중…";
+  try {
+    const r = await stonePost({ action: "analyze", title, info, body });
+    stoneEdit(null, { title, dna: r.dna, arguments: r.arguments, note: r.note, model: r.model, out: r });
+  } catch (e) { toast("분석하지 못했어요", stoneErr(e), "err"); btn.disabled = false; btn.innerHTML = icon("sparkle") + "분석"; }
+}
+function stoneLegendDialog() {
+  if (!STX) { loadStoneSchema(); toast("분류표를 불러오는 중이에요", "", "ok"); return; }
+  const sec = (title, obj, f) => `<h3 style="font-size:14px;margin-top:8px">${title}</h3><dl class="st-attrs">${Object.values(obj).map(v => `<dt>${f(v)[0]}</dt><dd>${esc(f(v)[1])}</dd>`).join("")}</dl>`;
+  openDialog(`<div><h2 id="dlg-title">돌 분류표</h2><p class="desc">하나의 시각 속성에는 하나의 정보만. AI도 이 값들 중에서만 골라요.</p></div>
+    ${sec("색 · 전시의 핵심 주제", STX.themes, v => [`<span class="dna-color"><i style="background:${v.hex}"></i>${esc(v.ko)}</span>`, v.keywords])}
+    <p class="hint">단일 주제는 한 색이 돌 전체를, 두 주제는 주 80% · 보조 20%, 논점이 3개 이상 얽히면 보조색은 광맥·결정에만 나타나요.</p>
+    ${sec("형태 · 관람 경험", STX.experiences, v => [esc(`${v.ko} · ${v.shape}`), v.desc])}
+    ${sec("무늬 · 해석 관점", STX.patterns, v => [esc(`${v.ko} · ${v.lens}`), v.desc])}
+    ${sec("표면 · 비평 태도", STX.stances, v => [esc(`${v.surface} · ${v.ko}`), v.desc])}
+    <h3 style="font-size:14px;margin-top:8px">내포물 · 논점 수</h3><p class="hint">1개 드문드문한 작은 결정 · 2개 두 종류의 광물 집합 · 3개 이상 여러 내포물이 모인 복합 구조. 키워드 수가 아니라 독립적으로 논의되는 핵심 주장의 수예요.</p>
+    ${sec("움직임 · 서술 방향 (영상 카메라)", STX.motions, v => [esc(v.camera), v.ko])}
     <div class="dialog-foot"><button class="btn primary" data-action="dialog-cancel">닫기</button></div>`, true);
 }
 
@@ -991,6 +1222,111 @@ function catsView() {
   </div>`;
 }
 
+
+/* ---------- 태그 ----------
+   태그 = 글들의 태그 + 태그 메뉴에서 만든 태그(S.tags, 아직 글이 없어도 남아 있음). 이름이 같으면 같은 태그.
+   이름 바꾸기 = 다른 이름으로 합치기. 삭제하면 그 태그를 쓰던 모든 글에서 빠져요. */
+function allTags() {
+  const m = new Map();
+  S.posts.forEach(p => (p.tags || []).forEach(t => { const k = String(t); m.set(k, (m.get(k) || 0) + 1); }));
+  S.tags.forEach(t => { if (t.name && !m.has(t.name)) m.set(t.name, 0); });
+  return [...m].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, "ko"));
+}
+const TGV = { q: "", sel: new Set() };
+function tagsView() {
+  const w = S.canWrite, q = TGV.q.trim().toLowerCase();
+  const tags = allTags(), shown = tags.filter(t => !q || t.name.toLowerCase().includes(q));
+  [...TGV.sel].forEach(n => { if (!tags.some(t => t.name === n)) TGV.sel.delete(n); });
+  const postsOf = n => S.posts.filter(p => (p.tags || []).includes(n));
+  return `
+  <div class="page-head">
+    <div><h1>태그</h1><p>지금까지 만든 태그 ${tags.length}개. 비슷한 태그는 합치고, 안 쓰는 태그는 지워요. 글을 쓸 때 이 목록에서 골라요.</p></div>
+    <div class="actions">${w ? `<button class="btn primary" data-action="new-tag">${icon("plus")}새 태그</button>` : ""}</div>
+  </div>
+  ${banner()}
+  <div class="tag-bar">
+    <label class="search"><span class="sr">태그 검색</span>${icon("search")}<input class="input" id="tag-q" placeholder="태그 검색" value="${esc(TGV.q)}" autocomplete="off"></label>
+    ${w ? `<span class="muted" style="font-size:13px">${TGV.sel.size ? `${TGV.sel.size}개 고름` : "합칠 태그를 체크하세요"}</span>
+      <button class="btn outline" data-action="tag-merge" ${TGV.sel.size < 2 ? "disabled" : ""}>합치기</button>
+      <button class="btn ghost danger" data-action="tag-delete-sel" ${!TGV.sel.size ? "disabled" : ""}>${icon("trash")}삭제</button>
+      ${TGV.sel.size ? `<button class="btn ghost" data-action="tag-sel-clear">선택 풀기</button>` : ""}` : ""}
+  </div>
+  <div class="card">
+    ${shown.length ? `<div class="table-wrap"><table>
+      <thead><tr>${w ? `<th style="width:36px"><span class="sr">고르기</span></th>` : ""}<th>태그</th><th>글</th><th class="hide-sm">쓰는 글</th><th class="col-right"><span class="sr">작업</span></th></tr></thead>
+      <tbody>${shown.map(t => { const ps = postsOf(t.name); return `<tr>
+        ${w ? `<td><input type="checkbox" data-tag-sel="${esc(t.name)}" ${TGV.sel.has(t.name) ? "checked" : ""} aria-label="${esc(t.name)} 고르기"></td>` : ""}
+        <td><span class="tag-name">#${esc(t.name)}</span></td>
+        <td class="num">${t.count}</td>
+        <td class="hide-sm muted" style="max-width:420px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${ps.length ? esc(ps.slice(0, 3).map(p => p.title).join(" · ")) + (ps.length > 3 ? ` 외 ${ps.length - 3}편` : "") : "아직 없음"}</td>
+        <td><div class="t-actions">${w ? `<button class="btn ghost icon sm" data-action="rename-tag" data-v="${esc(t.name)}" aria-label="${esc(t.name)} 이름 바꾸기">${icon("pencil")}</button>
+          <button class="btn ghost icon sm danger" data-action="delete-tag" data-v="${esc(t.name)}" aria-label="${esc(t.name)} 삭제">${icon("trash")}</button>` : ""}</div></td>
+      </tr>`; }).join("")}</tbody></table></div>`
+    : `<div class="empty"><div class="ic-lg">${icon("hash")}</div><h3>${q ? "찾는 태그가 없어요" : "아직 태그가 없어요"}</h3><p>${q ? "다른 말로 찾아보거나 새 태그로 만들어요." : "새 태그를 만들거나, 글을 쓰면서 태그를 붙여요."}</p></div>`}
+  </div>`;
+}
+// 새 태그 / 이름 바꾸기 (old가 있으면 이름 바꾸기 = old를 새 이름으로 합치기)
+function tagNameDialog(old) {
+  openDialog(`<div><h2 id="dlg-title">${old ? "태그 이름 바꾸기" : "새 태그"}</h2><p class="desc">${old ? `#${esc(old)}을(를) 쓰는 글 ${allTags().find(t => t.name === old)?.count || 0}편이 모두 바뀌어요. 이미 있는 태그 이름을 넣으면 그 태그로 합쳐져요.` : "글이 없어도 목록에 남아서, 글을 쓸 때 고를 수 있어요."}</p></div>
+    <div class="field"><label for="tag-name">이름</label><input class="input" id="tag-name" value="${esc(old || "")}" placeholder="예: 생태, 아카이브" autofocus autocomplete="off"></div>
+    <div class="dialog-foot"><button class="btn outline" data-action="dialog-cancel">취소</button><button class="btn primary" data-action="save-tag" data-v="${esc(old || "")}">${old ? "바꾸기" : "만들기"}</button></div>`);
+}
+const cleanTag = s => String(s || "").trim().replace(/^#+/, "").replace(/,/g, " ").replace(/\s+/g, " ").slice(0, 60);
+async function saveTagName(old) {
+  const name = cleanTag($("#tag-name").value); if (!name) { $("#tag-name").focus(); return; }
+  const same = allTags().find(t => t.name.toLowerCase() === name.toLowerCase() && t.name !== old);
+  if (!old) {
+    if (same) { toast("이미 있는 태그예요", `#${same.name}`, "err"); return; }
+    closeDialog(false);
+    if (await setDoc("tags", newId("tags"), { name, createdAt: nowISO() })) toast("태그를 만들었어요", `#${name}`, "ok");
+    return;
+  }
+  if (name === old) { closeDialog(false); return; }
+  closeDialog(false);
+  if (same && !(await confirmDialog({ title: `#${same.name}(으)로 합칠까요?`, desc: `#${old}을(를) 쓰던 글이 모두 #${same.name}(으)로 바뀌어요.`, confirm: "합치기" }))) return;
+  if (await mergeTags([old], same ? same.name : name)) toast(same ? "합쳤어요" : "이름을 바꿨어요", `#${old} → #${same ? same.name : name}`, "ok");
+}
+// names를 target 하나로: 글의 태그를 바꾸고(순서 유지, 겹치면 하나만), 태그 목록도 정리
+async function mergeTags(names, target) {
+  const from = new Set(names.filter(n => n !== target)), ops = [];
+  S.posts.forEach(p => {
+    const tags = p.tags || []; if (!tags.some(t => from.has(t))) return;
+    const next = [...new Set(tags.map(t => from.has(t) ? target : t))];
+    ops.push({ op: "update", coll: "posts", id: p.id, data: { tags: next } });
+  });
+  S.tags.filter(t => from.has(t.name)).forEach(t => ops.push({ op: "delete", coll: "tags", id: t.id }));
+  const used = S.posts.some(p => (p.tags || []).some(t => t === target || from.has(t)));
+  if (!used && !S.tags.some(t => t.name === target)) ops.push({ op: "set", coll: "tags", id: newId("tags"), data: { name: target, createdAt: nowISO() } });
+  const ok = await commit(ops);
+  if (ok) { TGV.sel.clear(); if (S.view === "tags") renderView(); }
+  return ok;
+}
+function mergeDialog() {
+  const names = [...TGV.sel]; if (names.length < 2) return;
+  const counts = new Map(allTags().map(t => [t.name, t.count]));
+  const best = [...names].sort((a, b) => (counts.get(b) || 0) - (counts.get(a) || 0))[0];
+  openDialog(`<div><h2 id="dlg-title">태그 ${names.length}개 합치기</h2><p class="desc">${names.map(n => `#${esc(n)}`).join(", ")} → 하나로. 이 태그들을 쓰던 글 ${S.posts.filter(p => (p.tags || []).some(t => names.includes(t))).length}편이 바뀌어요.</p></div>
+    <div class="field"><span class="label">남길 이름</span>${names.map(n => `<label style="display:flex;gap:8px;align-items:center;font-size:14px"><input type="radio" name="merge-to" value="${esc(n)}" ${n === best ? "checked" : ""}>#${esc(n)} <span class="muted">${counts.get(n) || 0}편</span></label>`).join("")}
+      <label style="display:flex;gap:8px;align-items:center;font-size:14px"><input type="radio" name="merge-to" value=""> 새 이름 <input class="input" id="merge-new" placeholder="새 이름" style="max-width:220px" autocomplete="off"></label></div>
+    <div class="dialog-foot"><button class="btn outline" data-action="dialog-cancel">취소</button><button class="btn primary" data-action="do-merge">합치기</button></div>`);
+}
+async function doMerge() {
+  const pick = $('input[name="merge-to"]:checked')?.value ?? "", typed = cleanTag($("#merge-new").value);
+  let target = pick || typed; if (!target) { $("#merge-new").focus(); return; }
+  const same = allTags().find(t => t.name.toLowerCase() === target.toLowerCase()); if (same) target = same.name;
+  const names = [...TGV.sel]; closeDialog(false);
+  if (await mergeTags(names, target)) toast("합쳤어요", `${names.length}개 → #${target}`, "ok");
+}
+async function deleteTags(names) {
+  if (!names.length) return;
+  const n = S.posts.filter(p => (p.tags || []).some(t => names.includes(t))).length;
+  if (!(await confirmDialog({ title: names.length > 1 ? `태그 ${names.length}개를 지울까요?` : `#${names[0]}을(를) 지울까요?`, desc: n ? `이 태그를 쓰는 글 ${n}편에서 태그가 빠져요. 글은 그대로예요.` : "쓰는 글이 없는 태그예요.", confirm: "지우기", destructive: true }))) return;
+  const set = new Set(names), ops = [];
+  S.posts.forEach(p => { if ((p.tags || []).some(t => set.has(t))) ops.push({ op: "update", coll: "posts", id: p.id, data: { tags: p.tags.filter(t => !set.has(t)) } }); });
+  S.tags.filter(t => set.has(t.name)).forEach(t => ops.push({ op: "delete", coll: "tags", id: t.id }));
+  if (await commit(ops)) { names.forEach(x => TGV.sel.delete(x)); if (S.view === "tags") renderView(); toast("지웠어요", names.map(x => "#" + x).join(" "), "ok"); }
+}
+
 /* ---------- export view ---------- */
 function buildExport() {
   const posts = S.posts.filter(p => !S.exportPublishedOnly || p.status === "published");
@@ -1118,7 +1454,8 @@ function openEditor(id) {
       ${E.ro ? "" : `<div class="card suggest" id="suggest-box"></div>`}
       <div class="field"><label for="f-tag">태그</label>
         <div class="chips" id="chips"></div>
-        <span class="hint">Enter나 쉼표로 추가해요.</span></div>
+        ${E.ro ? "" : `<div class="tag-pick" id="tag-pick" aria-label="지금까지 만든 태그"></div>`}
+        <span class="hint">${E.ro ? "" : "지금까지 만든 태그에서 눌러 고르세요. 목록에 없는 태그만 입력하고 Enter. 태그는 ‘태그’ 메뉴에서 정리해요."}</span></div>
       <div class="field"><span class="label">연결된 글 <span class="muted num" id="link-count">${E.linked.size}</span></span>
         <div class="picker"><label class="search"><span class="sr">연결할 글 검색</span>${icon("search")}<input class="input" id="link-q" placeholder="연결할 글 검색"></label><div class="picker-list" id="link-list"></div></div>
         <span class="hint">연결은 양방향이에요. 상대 글에서도 이 글이 연결된 것으로 보여요.</span></div>
@@ -1137,7 +1474,18 @@ function openEditor(id) {
 function renderChips() {
   const ro = E.ro ? "disabled" : "";
   $("#chips").innerHTML = E.d.tags.map((t, i) => `<span class="chip">#${esc(t)}${E.ro ? "" : `<button data-action="rm-tag" data-i="${i}" aria-label="${esc(t)} 태그 삭제">${icon("x")}</button>`}</span>`).join("") +
-    `<input id="f-tag" placeholder="${E.d.tags.length ? "" : "예: 도시, 기억, 걷기"}" ${ro}>`;
+    `<input id="f-tag" placeholder="${E.d.tags.length ? "" : "태그 찾기 · 예: 도시, 기억"}" autocomplete="off" ${ro}>`;
+  renderTagPick();
+}
+// 지금까지 만든 태그(다른 글의 태그 + 태그 메뉴에서 만든 것) 중 이 글에 없는 것. 입력한 글자로 좁혀요
+function renderTagPick() {
+  const box = $("#tag-pick"); if (!box || !E) return;
+  const q = ($("#f-tag")?.value || "").trim().replace(/^#/, "").toLowerCase();
+  const list = allTags().filter(t => !E.d.tags.includes(t.name) && (!q || t.name.toLowerCase().includes(q)));
+  const exact = q && allTags().some(t => t.name.toLowerCase() === q);
+  box.innerHTML = list.map(t => `<button type="button" data-action="pick-tag" data-v="${esc(t.name)}">#${esc(t.name)}<span class="n">${t.count}</span></button>`).join("")
+    + (q && !exact && !E.d.tags.some(x => x.toLowerCase() === q) ? `<button type="button" class="new" data-action="pick-tag" data-v="${esc($("#f-tag").value.trim().replace(/^#/, ""))}">${icon("plus")}새 태그 ‘${esc($("#f-tag").value.trim().replace(/^#/, ""))}’</button>` : "")
+    + (!list.length && !q ? `<span class="none">${allTags().length ? "있는 태그를 모두 골랐어요." : "아직 만든 태그가 없어요. 입력하고 Enter로 만들어요."}</span>` : "");
 }
 function renderLinks() {
   const q = E.linkQ.trim().toLowerCase();
@@ -1187,7 +1535,7 @@ async function runTranslate(to) {
     toast("번역했어요", "저장해야 웹진에 반영돼요.");
   } catch (e) {
     if (!E) return;
-    const msg = { 503: "서버에 Claude API 키가 설정되지 않았거나 잘못됐어요.", 429: "요청이 많아요. 잠시 후 다시 눌러 주세요.", 413: "글이 너무 길어서 한 번에 옮기지 못했어요. 본문을 나눠서 옮겨 주세요.", 401: "다시 로그인해 주세요." }[e.code] || "번역하지 못했어요. 잠시 후 다시 시도해 주세요.";
+    const msg = { 503: e.message === "no_api_key" ? "이 배포에 Claude API 키가 없어요. 키를 넣은 뒤 새로 배포한 주소에서 써 주세요." : "Claude API 키가 맞지 않거나 막혔어요. Vercel의 ANTHROPIC_API_KEY를 확인해 주세요.", 429: "요청이 많아요. 잠시 후 다시 눌러 주세요.", 413: "글이 너무 길어서 한 번에 옮기지 못했어요. 본문을 나눠서 옮겨 주세요.", 401: "다시 로그인해 주세요." }[e.code] || "번역하지 못했어요. 잠시 후 다시 시도해 주세요.";
     E.tr = { error: msg };
   } finally { if (E) { E.tr.loading = false; renderTranslate(); } }
 }
@@ -1225,13 +1573,15 @@ async function runSuggest() {
     E.sg = { done: true, keywords: r.keywords || [], related: (r.related || []).filter(x => postById(x.id)) };
   } catch (e) {
     if (!E) return;
-    const msg = { 503: "서버에 Claude API 키가 설정되지 않았거나 잘못됐어요.", 429: "요청이 많아요. 잠시 후 다시 눌러 주세요.", 401: "다시 로그인해 주세요." }[e.code] || "추천을 받지 못했어요. 잠시 후 다시 시도해 주세요.";
+    const msg = { 503: e.message === "no_api_key" ? "이 배포에 Claude API 키가 없어요. 키를 넣은 뒤 새로 배포한 주소에서 써 주세요." : "Claude API 키가 맞지 않거나 막혔어요. Vercel의 ANTHROPIC_API_KEY를 확인해 주세요.", 429: "요청이 많아요. 잠시 후 다시 눌러 주세요.", 401: "다시 로그인해 주세요." }[e.code] || "추천을 받지 못했어요. 잠시 후 다시 시도해 주세요.";
     E.sg = { ...(E.sg || {}), error: msg };
   } finally { if (E) { E.sg.loading = false; renderSuggest(); } }
 }
 
 function addTag(raw) {
-  const parts = String(raw).split(",").map(s => s.trim().replace(/^#/, "")).filter(Boolean);
+  // 이미 있는 태그와 대소문자만 다르면 있는 표기를 써서 태그가 흩어지지 않게
+  const known = new Map(allTags().map(t => [t.name.toLowerCase(), t.name]));
+  const parts = String(raw).split(",").map(s => s.trim().replace(/^#/, "")).filter(Boolean).map(t => known.get(t.toLowerCase()) || t);
   let added = false;
   parts.forEach(t => { if (!E.d.tags.includes(t)) { E.d.tags.push(t); added = true; } });
   if (added) { E.dirty = true; renderChips(); $("#f-tag").focus(); }
@@ -1549,6 +1899,15 @@ document.addEventListener("click", async e => {
       E.tab = t.dataset.v; $$("[data-action=body-tab]").forEach(b => b.setAttribute("aria-selected", b === t));
       const pv = E.tab === "preview"; $("#f-body").hidden = pv; $("#preview").hidden = !pv; if (pv) $("#preview").innerHTML = rhizomeMd(E.d.body) || `<p class="muted">미리 볼 내용이 없어요.</p>`; break; }
     case "rm-tag": E.d.tags.splice(Number(t.dataset.i), 1); E.dirty = true; renderChips(); renderSuggest(); break;
+    case "pick-tag": addTag(t.dataset.v); { const f = $("#f-tag"); if (f) { f.value = ""; renderTagPick(); f.focus(); } } break;
+    case "new-tag": tagNameDialog(); break;
+    case "rename-tag": tagNameDialog(t.dataset.v); break;
+    case "save-tag": saveTagName(t.dataset.v); break;
+    case "delete-tag": deleteTags([t.dataset.v]); break;
+    case "tag-merge": mergeDialog(); break;
+    case "do-merge": doMerge(); break;
+    case "tag-delete-sel": deleteTags([...TGV.sel]); break;
+    case "tag-sel-clear": TGV.sel.clear(); renderView(); break;
     case "toggle-link": if (t.checked) E.linked.add(id); else E.linked.delete(id); E.dirty = true; $("#link-count").textContent = E.linked.size; renderSuggest(); break;
     case "fstatus": S.fstatus = t.dataset.v; updatePosts(); break;
     case "clear-filters": S.q = ""; S.fcat = "all"; S.fstatus = "all"; renderView(); break;
@@ -1578,6 +1937,18 @@ document.addEventListener("click", async e => {
     case "rm-image": E.d.image = ""; E.d.imageAlt = ""; E.dirty = true; renderImage(); break;
     case "suggest": runSuggest(); break;
     case "translate": runTranslate(t.dataset.to); break;
+    case "stone-filter": STV.filter = t.dataset.v; renderView(); break;
+    case "stone-analyze": stoneAnalyze(id); break;
+    case "stone-bulk": stoneBulk(); break;
+    case "stone-edit": stoneEdit(id); break;
+    case "stone-save": stoneSave(); break;
+    case "stone-clear": stoneClear(); break;
+    case "stone-paste": stonePasteDialog(); break;
+    case "stone-paste-run": stonePasteRun(t); break;
+    case "stone-legend": stoneLegendDialog(); break;
+    case "stone-copy": { const o = DX?.out; const txt = t.dataset.v === "img" ? o?.imagePrompt : t.dataset.v === "vid" ? o?.videoPrompt
+        : JSON.stringify({ title: DX.title || "", ...Object.fromEntries(DNA_KEYS.filter(k => DX.dna[k]).map(k => [k, DX.dna[k].value])), arguments: DX.arguments || [], confidence: Object.fromEntries(DNA_KEYS.filter(k => DX.dna[k]).map(k => [k, DX.dna[k].confidence])), imagePrompt: o?.imagePrompt, videoPrompt: o?.videoPrompt }, null, 2);
+      try { await navigator.clipboard.writeText(txt || ""); toast("복사했어요", "", "ok"); } catch { toast("복사하지 못했어요", "직접 선택해 복사해 주세요.", "err"); } break; }
     case "spore-filter": SPV.filter = t.dataset.v; renderView(); break;
     case "spore-generate": sporeGenerate(id); break;
     case "spore-approve": if (await sporeAct(id, "approve")) toast("승인했어요", "1~2분 안에 웹진에 나와요.", "ok"); break;
@@ -1598,6 +1969,14 @@ document.addEventListener("click", async e => {
 });
 // 이미지: 파일 선택 / 붙여넣기 / 끌어다 놓기
 document.addEventListener("change", e => {
+  if (e.target.dataset?.tagSel !== undefined) { const n = e.target.dataset.tagSel; e.target.checked ? TGV.sel.add(n) : TGV.sel.delete(n); renderView(); return; }
+  const dk = e.target.dataset?.dna;
+  if (dk && DX) {   // 사람이 고른 값은 확신도 100%, 근거는 그대로
+    const v = dk === "argument_count" ? Number(e.target.value) || "" : e.target.value;
+    DX.dna[dk] = { value: v, confidence: 1, evidence: DX.dna[dk]?.evidence || "" };
+    const row = e.target.closest(".dna-row"), c = row && row.querySelector(".conf"); if (c) { c.className = "conf"; c.textContent = "직접 고름"; }
+    clearTimeout(dxTimer); dxTimer = setTimeout(refreshStonePrompts, 150);
+  }
   if (e.target.id === "img-file" && e.target.files[0]) { uploadImage(e.target.files[0]); e.target.value = ""; }
   if (e.target.id === "spore-file" && e.target.files[0]) { sporeUpload(e.target.dataset.id, e.target.files[0]); e.target.value = ""; }
   if (e.target.id === "md-files" && e.target.files.length) { addMdFiles(e.target.files).finally(() => { e.target.value = ""; }); }
@@ -1646,6 +2025,8 @@ document.addEventListener("drop", e => {
 });
 window.addEventListener("focus", () => { if (S.mode === "live") connect(true); });
 document.addEventListener("input", e => {
+  if (e.target.id === "f-tag") renderTagPick();
+  if (e.target.id === "tag-q") { TGV.q = e.target.value; const pos = e.target.selectionStart; renderView(); const i = $("#tag-q"); if (i) { i.focus(); i.setSelectionRange(pos, pos); } }
   const t = e.target;
   if (t.id === "q") { S.q = t.value; renderTable(); return; }
   if (t.id === "link-q") { E.linkQ = t.value; renderLinks(); return; }
@@ -1686,7 +2067,9 @@ document.addEventListener("keydown", e => {
   if (e.key === "Enter" && e.target.closest && e.target.closest("tr.clickable") === e.target) e.target.click();
   if ((e.key === "Enter" || e.key === " ") && (e.target.id === "imgdrop" || e.target.id === "md-drop") && e.target.dataset.action) { e.preventDefault(); e.target.click(); }
 });
-document.addEventListener("focusout", e => { if (e.target.id === "f-tag" && e.target.value.trim()) { addTag(e.target.value); const f = $("#f-tag"); if (f) f.value = ""; } });
+// 태그 목록을 눌러도 입력칸의 포커스가 안 빠지게(Safari는 버튼에 포커스를 안 줘서 relatedTarget이 비어요)
+document.addEventListener("mousedown", e => { if (e.target.closest?.("#tag-pick button")) e.preventDefault(); });
+document.addEventListener("focusout", e => { if (e.target.id === "f-tag" && e.target.value.trim() && !e.relatedTarget?.closest?.("#tag-pick")) { addTag(e.target.value); const f = $("#f-tag"); if (f) f.value = ""; } });
 window.addEventListener("hashchange", () => { S.view = viewFromHash(); renderAll(); });
 let rz; window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(drawMap, 150); });
 try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", drawMap); } catch {}

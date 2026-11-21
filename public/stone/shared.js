@@ -1,4 +1,4 @@
-/* 부드러운 지층 · Soft Strata — 돌무더기(/stone/)와 리좀(/stone/rhizome/)이 함께 쓰는 코드
+/* 부드러운 지층 · Fluffy Strata — 돌무더기(/stone/)와 리좀(/stone/rhizome/)이 함께 쓰는 코드
    데이터 불러오기 · 한/영 문구 · 글마다 돌 정하기 · 마우스 궤적 · 글 읽기 패널 · 네트워크 배치 · 마크다운
    3D(돌 모델·물리·그리기)는 /stone/stones.js */
 (() => {
@@ -11,13 +11,13 @@
    ============================================================================ */
 const TEXT = {
   en: {
-    title: ["SOFT", "STRATA"], titleFlat: "Soft Strata",
+    title: ["FLUFFY", "STRATA"], titleFlat: "Fluffy Strata",
     subtitle: "Relations that overlap, seep in, and grow in the gaps of time.",
     navStones: "Stones", navRhizome: "Rhizome", navAbout: "About",
     pileHint: "Hover a stone to rattle it · click to pick it up",
     pickedUp: "Picked up", putBack: "Put it back",
     close: "Close", article: "Stone", chars: "chars", min: "min", viewInRhizome: "View in the rhizome", linked: "Stones on the same thread",
-    aboutTitle: "Soft Strata", aboutBody: "A webzine of stones floating in space. Each article is one stone; shared concepts are stars, and threads tie stones to the stars and to each other, without hierarchy.",
+    aboutTitle: "Fluffy Strata", aboutBody: "A webzine of stones floating in space. Each article is one stone; shared concepts are stars, and threads tie stones to the stars and to each other, without hierarchy.",
     dataLive: n => `${n} published articles from the admin. Saved changes appear within a minute or two.`,
     dataCache: n => `Could not reach the server — showing the last ${n} articles saved in this browser.`,
     dataSample: "Could not load published articles — showing sample articles.", dataEmpty: "No published articles yet.",

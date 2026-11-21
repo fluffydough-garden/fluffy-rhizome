@@ -1,7 +1,7 @@
 import { del } from "@vercel/blob";
 import { readDb, writeDb, latestVersion, toLists, authed, json, unauthorized, isOurImage } from "../lib/store.js";
 
-const COLLS = new Set(["posts", "categories"]);
+const COLLS = new Set(["posts", "categories", "tags"]);
 const ID = /^[A-Za-z0-9_-]{1,64}$/;
 const imagesOf = db => new Set(Object.values(db.posts).map(p => p.image).filter(Boolean));
 
@@ -34,6 +34,8 @@ export async function POST(req) {
       delete data.id;
       // 포자 이미지 상태는 /api/spore가 따로 관리 — 글을 통째로 저장해도 지우거나 예전 값으로 덮지 않음
       if (o.coll === "posts") { delete data.spore; if (coll[o.id]?.spore) data.spore = coll[o.id].spore; }
+      // 돌 DNA도 /api/stone이 따로 관리
+      if (o.coll === "posts") { delete data.stone; if (coll[o.id]?.stone) data.stone = coll[o.id].stone; }
       if (o.op === "set") coll[o.id] = data;
       else if (o.op === "update") { if (coll[o.id]) coll[o.id] = { ...coll[o.id], ...data }; }
       else delete coll[o.id];
