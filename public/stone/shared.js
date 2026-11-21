@@ -194,11 +194,12 @@ const TIER_MAX = 5000;
    - 모양: 글 번호 순서대로 s01부터 하나씩, 12편을 넘으면 처음부터 다시(그땐 재질을 바꿔 구별).
    - 재질: 4~5단계(긴) 글은 보석, 나머지는 광택 돌. 
    - 크기: 글이 길수록 커요.
-   특정 글에 특정 돌을 붙이려면 STONE_PICK = { 글ID: { shape: 0~11, gem: true/false } } */
+   특정 글에 특정 돌을 붙이려면 STONE_PICK = { 글ID: { shape: 0~11, gem: true/false, hue: -180~180, sat: 0.5~1.5 } } */
 const STONE_NAMES = ["vortex cube", "honeycomb geode", "ripple disc", "twisted helix", "bubble obsidian", "ammonite spiral", "melted drip", "star fracture sphere", "stacked layers", "cratered egg", "porous iridescent", "trefoil knot"];
 const STONES = STONE_NAMES.map((name, i) => { const n = String(i + 1).padStart(2, "0"); return { id: "s" + n, name, src: `/stone/media/stones/s${n}.glb` }; });
 const STONE_PICK = {};
 const GEM_TIER = 4;
+const STONE_HUE = 28;   // 글마다 색조를 돌리는 폭(도). 0이면 모델 색 그대로. STONE_PICK에 hue·sat(채도 배율)을 적으면 그 글은 그 값
 /* 어드민에서 아직 포자 속성을 고르지 않은 글: 제목·태그·본문의 낱말로 의제와 유형을 짐작해 임시 속성을 붙여요.
    (어드민에서 고르면 그쪽이 이겨요.) 같은 글은 언제나 같은 결과. */
 const TOPIC_WORDS = {
@@ -250,7 +251,9 @@ function index() {
     const pick = STONE_PICK[p.id] || {}, R = rnd("stone_" + p.id);
     const shape = pick.shape ?? i % STONES.length, lap = Math.floor(i / STONES.length);
     const gem = pick.gem ?? ((p._tier >= GEM_TIER) !== (lap % 2 === 1));
-    p._stone = { ...STONES[shape], shape, gem, size: clamp(.62 + .7 * Math.sqrt(p._chars / 12000), .6, 1.4), seed: R(), spin: .08 + R() * .14 };
+    // 색: 글마다 색조를 조금씩 돌려요(±STONE_HUE도). 같은 모양을 다시 쓰는 글은 크게 돌려서 확실히 다르게
+    const hue = Math.round(lap ? (R() < .5 ? -1 : 1) * (70 + R() * 110) : (R() * 2 - 1) * STONE_HUE), sat = +(.85 + R() * .35).toFixed(2);
+    p._stone = { ...STONES[shape], shape, gem, hue: pick.hue ?? hue, sat: pick.sat ?? sat, size: clamp(.62 + .7 * Math.sqrt(p._chars / 12000), .6, 1.4), seed: R(), spin: .08 + R() * .14 };
   });
   const seen = new Set(); LINKS = [];
   (DATA.links || []).forEach(l => {

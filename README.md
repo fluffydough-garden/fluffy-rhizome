@@ -45,7 +45,7 @@ fetch("https://rhizome-webzine.vercel.app/api/rhizome")
   - `rhizome/index.html` 리좀 지도: 포자 컨셉과 같은 지도(개념 = 별, 균사 = 실, 균총 = 별자리, 나의 균사 = 나의 궤도). 글마다 그 돌이 지도 위에서 천천히 자전하고, 올리면 덜걱. 돌은 `#stones` 캔버스 하나로 그려요
   - `stones.js` 3D(three.js): 돌 모델 불러오기·보석 재질·덜걱 움직임(`Rattle`)·썸네일·지도 오버레이
   - `shared.js` 문구(`TEXT`)·데이터·글마다 돌 정하기(`STONES`, `STONE_PICK`, `GEM_TIER`)·패널·네트워크. 돌 규칙: 모양 12가지를 글 번호 순서로 하나씩, 4~5단계(긴) 글은 유리질 보석·나머지는 광택 돌(12편을 넘으면 재질을 바꿔 구별), 글이 길수록 큰 돌
-  - `media/stones/s01~s12.glb` strange stones **o88** 광택본(meshopt, 불투명도 0.88 · BLEND · 양면). 텍스처 2048 → 1024px WebP, 삼각형 약 절반으로 줄임(합계 약 9.6MB). 보석본은 모양·텍스처가 같아서 파일 없이 `stones.js`의 `GEM` 값으로 재질만 바꿔요. 불투명도는 `stones.js`의 `OPACITY`(0.75 = 더 유리 같음, 0.95 = 거의 불투명)
+  - `media/stones/s01~s12.glb` strange stones **o88** 광택본(meshopt, 불투명도 0.88 · BLEND · 양면). 텍스처 2048 → 1024px WebP, 삼각형 약 절반으로 줄임(합계 약 9.6MB). 보석본은 모양·텍스처가 같아서 파일 없이 `stones.js`의 `GEM` 값으로 재질만 바꿔요. s01·s03·s04는 나중에 받은 새 디자인으로 바꿈(같은 방식으로 경량화). 글마다 색조를 조금씩 돌려요(`shared.js`의 `STONE_HUE`, 같은 모양을 다시 쓰는 글은 크게). 불투명도는 `stones.js`의 `OPACITY`(0.75 = 더 유리 같음, 0.95 = 거의 불투명)
 - `public/admin/index.html` 어드민 (`/admin`, 검색엔진 noindex). ‘포자 이미지’ 화면에서 글마다 속성 정리·생성·재생성·승인·직접 올리기
 - `public/fonts/` 웹진 글꼴
 - `lib/markdown.js` 마크다운 렌더러 — 웹진·어드민·API가 같은 함수를 씀. 고친 뒤 `node scripts/check-markdown.mjs`

@@ -50,17 +50,32 @@ export function load(stone) {
   return pr;
 }
 
-function materialFor(src, gem) {
+/* 글마다 색조를 조금씩: 텍스처 색을 hue(도)만큼 돌리고 채도를 sat배로. 밝기는 그대로라 돌의 결은 살아 있어요 */
+const HUE_GLSL = `uniform float uHue; uniform float uSat;
+vec3 stoneHue(vec3 c) { const vec3 k = vec3(0.57735); float a = uHue, ca = cos(a);
+  c = c * ca + cross(k, c) * sin(a) + k * dot(k, c) * (1.0 - ca);
+  float l = dot(c, vec3(0.2126, 0.7152, 0.0722)); return max(mix(vec3(l), c, uSat), 0.0); }
+`;
+function tintable(m, hue = 0, sat = 1) {
+  if (!hue && sat === 1) return m;
+  m.onBeforeCompile = sh => {
+    sh.uniforms.uHue = { value: hue * Math.PI / 180 }; sh.uniforms.uSat = { value: sat };
+    sh.fragmentShader = HUE_GLSL + sh.fragmentShader.replace("#include <map_fragment>", "#include <map_fragment>\n  diffuseColor.rgb = stoneHue(diffuseColor.rgb);");
+  };
+  m.customProgramCacheKey = () => "stone-hue";
+  return m;
+}
+function materialFor(src, gem, hue, sat) {
   // 무더기에서 앞뒤 돌이 뒤엉켜 보이지 않게 깊이는 기록해요(파일 권장값은 depthWrite=false지만, 0.88이면 이 편이 깔끔)
-  if (!gem) { const m = src.clone(); m.transparent = true; m.opacity = OPACITY; m.depthWrite = true; m.side = THREE.DoubleSide; return m; }
-  return new THREE.MeshPhysicalMaterial({
+  if (!gem) { const m = src.clone(); m.transparent = true; m.opacity = OPACITY; m.depthWrite = true; m.side = THREE.DoubleSide; return tintable(m, hue, sat); }
+  return tintable(new THREE.MeshPhysicalMaterial({
     map: src.map, normalMap: src.normalMap, normalScale: src.normalScale, roughnessMap: src.roughnessMap, metalnessMap: src.metalnessMap,
     roughness: Math.min(src.roughness ?? .4, .35), metalness: src.metalness ?? 0,
     iridescence: GEM.iridescence, iridescenceIOR: GEM.iridescenceIOR, iridescenceThicknessRange: GEM.thickness,
     clearcoat: GEM.clearcoat, clearcoatRoughness: GEM.clearcoatRoughness, specularIntensity: 1,
     emissive: 0xffffff, emissiveMap: src.map, emissiveIntensity: GEM.emissive,
     transparent: true, opacity: GEM.opacity, depthWrite: true, side: THREE.DoubleSide
-  });
+  }), hue, sat);
 }
 
 /* 글 하나의 돌: group(물리·자리) > body(덜걱거림·뜨기) > mesh들. 재질은 돌마다 따로(투명도를 따로 바꾸려고) */
@@ -69,7 +84,7 @@ export async function makeStone(stone) {
   const group = new THREE.Group(), body = new THREE.Group();
   group.add(body);
   const mats = [];
-  S.meshes.forEach(m => { const mat = materialFor(m.material, stone.gem); mats.push(mat); const mesh = new THREE.Mesh(m.geometry, mat); mesh.castShadow = mesh.receiveShadow = true; body.add(mesh); });
+  S.meshes.forEach(m => { const mat = materialFor(m.material, stone.gem, stone.hue || 0, stone.sat ?? 1); mats.push(mat); const mesh = new THREE.Mesh(m.geometry, mat); mesh.castShadow = mesh.receiveShadow = true; body.add(mesh); });
   const hit = new THREE.Mesh(S.hull, new THREE.MeshBasicMaterial({ visible: false }));
   body.add(hit);
   group.userData = { stone, shape: S, body, hit, mats, rattle: new Rattle(stone.seed) };
@@ -149,7 +164,7 @@ let TR = null;
 const thumbs = new Map();
 let queue = Promise.resolve();
 export function thumb(stone, px = 256) {
-  const key = stone.src + (stone.gem ? ":gem" : "") + ":" + px;
+  const key = stone.src + (stone.gem ? ":gem" : "") + ":" + (stone.hue || 0) + ":" + (stone.sat ?? 1) + ":" + px;
   if (thumbs.has(key)) return thumbs.get(key);
   const pr = queue = queue.then(async () => {
     if (!TR) {

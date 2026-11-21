@@ -240,11 +240,13 @@ cv.addEventListener("pointerup", e => {
 /* ===================== 클릭: 집어 들기 → 글 읽기 → 다시 무더기 위로 ===================== */
 // 집어 든 돌은 무더기에서 빠져나와(남은 돌이 그 빈자리로 우르르 내려앉아요) 화면 앞으로 떠오르고 천천히 돌아요.
 // 같은 실(링크·태그)로 이어진 돌들은 그 순간 함께 덜걱거려요. 글을 닫으면 무더기 꼭대기에 다시 툭 떨어져요.
-let lift = null, drag = null, spinV = { x: 0, y: 0 };
+// lift: 지금 떠오르는 돌(하나) · backs: 무더기로 돌아가는 돌들(여럿일 수 있어요) — 동시에 떠 있는 돌은 언제나 하나
+let lift = null, backs = [], drag = null, spinV = { x: 0, y: 0 };
 const spinQ = new THREE.Quaternion();
 function pick(s) {
   if (!s || !s.g || s === picked) return;
   if (picked) putBack();
+  backs = backs.filter(b => b.s !== s);   // 돌아가던 돌을 다시 집으면 그 자리에서 다시 떠올라요
   picked = s; hot === s && setHot(null);
   s.g.userData.rattle.set(false);
   if (s.rb) { world.removeRigidBody(s.rb); s.rb = null; }
@@ -257,8 +259,9 @@ function pick(s) {
 }
 function putBack() {
   const s = picked; if (!s) return;
-  picked = null;
-  lift = { s, t0: performance.now(), p0: s.g.position.clone(), q0: s.g.quaternion.clone(), k0: s.g.scale.x, back: true };
+  picked = null; drag = null;
+  if (lift && lift.s === s) lift = null;
+  backs.push({ s, t0: performance.now(), p0: s.g.position.clone(), k0: s.g.scale.x });
 }
 function liftTarget(s) {
   // 카메라 앞, 화면 높이의 LIFT_VIEW 만큼 크게
@@ -273,6 +276,7 @@ function animLift(now, dt) {
   const want = picked ? .55 : 0;
   veil.material.opacity += (want - veil.material.opacity) * (1 - Math.exp(-dt * 6));
   if (veil.material.opacity > .003) { const dir = new THREE.Vector3(); cam.getWorldDirection(dir); const vd = view.fit * .62; veil.position.copy(cam.position).addScaledVector(dir, vd); veil.quaternion.copy(cam.quaternion); veil.scale.setScalar(vd * 3); veil.visible = true; } else veil.visible = false;
+  backs = backs.filter(b => !animBack(b, now));
   if (!lift) {
     if (picked) {               // 떠 있는 동안: 천천히 돌거나, 끌면 그 방향으로
       const g = picked.g, tg = liftTarget(picked);
@@ -284,20 +288,22 @@ function animLift(now, dt) {
     }
     return;
   }
-  const s = lift.s, g = s.g, u = clamp((now - lift.t0) / (lift.back ? 650 : 900), 0, 1), e = REDUCE ? 1 : ease(u);
-  if (!lift.back) {
-    const tg = liftTarget(s);
-    g.position.lerpVectors(lift.p0, tg.pos, e); g.position.y += Math.sin(e * Math.PI) * .6;
-    g.scale.setScalar(lift.k0 + (tg.k - lift.k0) * e);
-    g.quaternion.copy(lift.q0).premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), e * 2.4));
-    if (u >= 1) lift = null;
-  } else {
-    const a = Math.random() * 6.28, top = { x: Math.cos(a) * .3, y: Math.max(2.4, pileTop() + 1 + s.size * .5), z: Math.sin(a) * .3 };
-    lift.to = lift.to || new THREE.Vector3(top.x, top.y, top.z);
-    g.position.lerpVectors(lift.p0, lift.to, e);
-    g.scale.setScalar(lift.k0 + (s.size - lift.k0) * e);
-    if (u >= 1) { g.scale.setScalar(s.size); drop(s, { x: g.position.x, y: g.position.y, z: g.position.z }); lift = null; }
-  }
+  const s = lift.s, g = s.g, u = clamp((now - lift.t0) / 900, 0, 1), e = REDUCE ? 1 : ease(u);
+  const tg = liftTarget(s);
+  g.position.lerpVectors(lift.p0, tg.pos, e); g.position.y += Math.sin(e * Math.PI) * .6;
+  g.scale.setScalar(lift.k0 + (tg.k - lift.k0) * e);
+  g.quaternion.copy(lift.q0).premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), e * 2.4));
+  if (u >= 1) lift = null;
+}
+// 무더기 꼭대기 위로 날아가 작아진 뒤 물리로 툭 떨어져요. 끝나면 true
+function animBack(b, now) {
+  const s = b.s, g = s.g, u = clamp((now - b.t0) / 650, 0, 1), e = REDUCE ? 1 : ease(u);
+  if (!b.to) { const a = Math.random() * 6.28; b.to = new THREE.Vector3(Math.cos(a) * .3, Math.max(2.4, pileTop() + 1 + s.size * .5), Math.sin(a) * .3); }
+  g.position.lerpVectors(b.p0, b.to, e);
+  g.scale.setScalar(b.k0 + (s.size - b.k0) * e);
+  if (u < 1) return false;
+  g.scale.setScalar(s.size); drop(s, { x: g.position.x, y: g.position.y, z: g.position.z });
+  return true;
 }
 function dragTo(e) {
   const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY;
