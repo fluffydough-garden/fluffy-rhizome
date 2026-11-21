@@ -1,4 +1,4 @@
-/* 부드러운 침범 · Soft Invasion — 두 페이지(/spore/, /spore/rhizome/)가 함께 쓰는 코드
+/* 부드러운 침범 · Soft Invasion — 리좀 페이지(/spore/)가 쓰는 코드
    데이터 불러오기 · 한/영 문구 · 포자 그림 · 마우스 궤적 · 글 읽기 패널 · 네트워크 배치 · 마크다운 */
 (() => {
 "use strict";
@@ -398,10 +398,10 @@ function place(G) {
   if (typeof d3 === "undefined") return;
   const sim = d3.forceSimulation(G.nodes)
     .force("link", d3.forceLink(G.edges.map(e => ({ source: e.a, target: e.b, kind: e.kind }))).id(n => n.id)
-      .distance(l => l.kind === "pp" ? 190 : (l.source.count || l.target.count) === 1 ? 55 : 120)
+      .distance(l => l.kind === "pp" ? 230 : (l.source.count || l.target.count) === 1 ? 55 : 120)
       .strength(l => l.kind === "pp" ? .25 : (l.source.count || l.target.count) === 1 ? .9 : .3))
     .force("charge", d3.forceManyBody().strength(n => n.type === "c" ? (n.count > 1 ? -320 - n.count * 30 : -60) : -650).distanceMax(700))
-    .force("collide", d3.forceCollide(n => n.type === "c" ? (n.count > 1 ? 40 : 22) : 62 + (n.tier || 1) * 4).strength(.9))
+    .force("collide", d3.forceCollide(n => n.type === "c" ? (n.count > 1 ? 40 : 22) : (n.tier || 1) >= 4 ? 96 : 52 + (n.tier || 1) * 6).strength(.9))   // 4~5단계는 3D 포자라 자리를 넓게
     .force("x", d3.forceX(0).strength(.03)).force("y", d3.forceY(0).strength(.045))
     .stop();
   for (let i = 0; i < 360; i++) sim.tick();
@@ -691,8 +691,7 @@ function renderNav(active) {
   el.innerHTML = `
     <a class="brand" href="${home}"><span class="brand-mark" aria-hidden="true"></span><span>${esc(t("titleFlat"))}</span></a>
     <nav class="links" aria-label="Main">
-      <a href="${home}" data-go="spores" ${navActive === "spores" ? 'aria-current="page"' : ""}>${esc(t("navSpores"))}${navActive === "spores" ? IND : ""}</a>
-      <a href="/spore/rhizome/" data-go="rhizome" ${navActive === "rhizome" ? 'aria-current="page"' : ""}>${esc(t("navRhizome"))}${navActive === "rhizome" ? IND : ""}</a>
+      <a href="${home}" ${navActive === "rhizome" ? 'aria-current="page"' : ""}>${esc(t("navRhizome"))}${navActive === "rhizome" ? IND : ""}</a>
       <button type="button" data-sp="about">${esc(t("navAbout"))}</button>
     </nav>
     <div class="lang" role="group" aria-label="Language">
@@ -724,7 +723,7 @@ function openReader(id, opts = {}) {
       ${p.image ? `<img class="r-hero" src="${esc(p.image)}" alt="${esc(p.imageAlt || "")}">` : ""}
       <div class="prose" lang="${LANG === "en" && p.bodyEn ? "en" : "ko"}">${rhizomeMd(bodyOf(p))}</div>
       ${linked.length ? `<section class="r-linked"><h3 class="mono">${esc(t("linked"))}</h3>${linked.map(o => `<button data-read="${esc(o.id)}">${sporeImg(o, "mini")}<span>${esc(titleOf(o))}</span></button>`).join("")}</section>` : ""}
-      <a class="pill-btn dark r-go" href="/spore/rhizome/#p=${encodeURIComponent(p.id)}">${esc(t("viewInRhizome"))} →</a>
+      <a class="pill-btn dark r-go" href="/spore/#p=${encodeURIComponent(p.id)}">${esc(t("viewInRhizome"))} →</a>
     </div>`;
   reader.classList.add("open"); document.body.classList.add("reading");
   reader.querySelector(".r-body").scrollTop = 0;
@@ -920,7 +919,7 @@ const ready = Promise.all([document.fonts ? document.fonts.ready : null, load()]
 const SP = window.SP = {
   TEXT, TOPICS, t, get lang() { return LANG; }, setLang, onLang: f => langHooks.push(f), onData: f => dataHooks.push(f),
   ready, get posts() { return POSTS; }, get links() { return LINKS; }, byId: id => BYID.get(id), linkedOf, get src() { return src; }, get data() { return DATA; },
-  go, spore3d, titleOf, altTitleOf, summaryOf, bodyOf, no, catOf, catName, topicText, sporeCanvas, sporeSrc, sporeImg, network,
+  go, hasGL, spore3d, titleOf, altTitleOf, summaryOf, bodyOf, no, catOf, catName, topicText, sporeCanvas, sporeSrc, sporeImg, network,
   renderNav, openReader, closeReader, readerHooks, get readerId() { return readerId; }, openAbout, closeAbout, toast, refresh,
   // pages may replace these (e.g. to keep the address in sync)
   read: id => openReader(id), unread: () => closeReader(),
