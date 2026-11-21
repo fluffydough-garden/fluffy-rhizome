@@ -29,7 +29,11 @@ fetch("https://rhizome-webzine.vercel.app/api/rhizome")
 ## 구조
 
 - `public/index.html` 웹진(첫 화면) — 그래프와 갤러리 보기. 열 때마다 `/api/rhizome`에서 발행된 글을 읽어 옴. 발행된 글이 없으면 빈 화면, 서버에 못 닿으면 이 브라우저에 저장된 마지막 글(그것도 없으면 예시 글)을 보여줌. 탭으로 돌아오면 바뀐 글이 있는지 다시 확인함
-- `public/spore/index.html` 포자 컨셉 웹진 (`/spore`, 브랜치 `concept-spore`) — MYCELIUM ARCHIVE. 개념(태그·카테고리)=포자, 연결=균사, 글=자실체. 개념을 누르면 균사가 자라고(여러 개면 균총이 겹침), 글을 열면 우측 패널과 함께 포자가 퍼짐. 내가 읽은 경로는 ‘나의 균사’(이 브라우저에만 저장). 주소 `#c=개념&p=글ID`로 공유·뒤로 가기. 글 크기는 글자수 구간 1~5(5000자 이상=5, 그 아래는 상대 4등분). 배경 이미지·영상은 파일 위쪽 `MEDIA`에 경로를 넣으면 됨. 같은 `/api/rhizome`을 읽어 어드민 공유
+- `public/spore/` 포자 컨셉 웹진 **부드러운 침범 / Soft Invasion** (브랜치 `concept-spore`, 기본 영어 · 한국어 전환은 오른쪽 위 EN/KO, `?lang=ko`로도 열림)
+  - `index.html` 메인: 1) 모든 포자(글 하나 = 포자 하나)가 떠 있는 대문 2) 포자 분류(의제별) 3) 리좀 미리보기 → 버튼으로 `rhizome/` 4) 끝없이 이어지는 글 목록. 글은 오른쪽 패널에서 열리고 주소 `#p=글ID`로 공유
+  - `rhizome/index.html` 전체 리좀 인터랙션(균사 성장·균총·나의 균사). 주소 `#c=개념&p=글ID`
+  - `shared.js` 두 페이지 공통: 한/영 문구(`TEXT`)와 포자 분류 이름·설명·색(`TOPICS`) — 다듬은 문구는 여기에 넣으면 됨. 데이터, 포자 그림(승인된 포자 이미지가 없으면 포자 속성으로 그린 임시 표본), 지난 10초 마우스 궤적, 글 패널, 리좀 배치, 마크다운
+  - `shared.css` 공통 스타일과 글꼴
 - `public/admin/index.html` 어드민 (`/admin`, 검색엔진 noindex). ‘포자 이미지’ 화면에서 글마다 속성 정리·생성·재생성·승인·직접 올리기
 - `public/fonts/` 웹진 글꼴
 - `lib/markdown.js` 마크다운 렌더러 — 웹진·어드민·API가 같은 함수를 씀. 고친 뒤 `node scripts/check-markdown.mjs`
