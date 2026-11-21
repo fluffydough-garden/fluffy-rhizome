@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stones · Strange Stones</title>
+<link rel="stylesheet" href="/stone/shared.css">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+<style>
+html,body{height:100%;overflow:hidden}
+body{background:radial-gradient(50% 45% at 50% 58%,rgba(70,54,120,.28),transparent 70%),radial-gradient(40% 50% at 12% 88%,rgba(40,62,130,.22),transparent 70%),radial-gradient(30% 30% at 88% 18%,rgba(120,40,80,.16),transparent 70%),var(--bg)}
+#pile{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;outline:none}
+#pile.hot{cursor:pointer}
+/* 왼쪽 아래 제목 · 오른쪽 아래 개수와 리좀으로 */
+.hero{position:fixed;left:var(--pad);bottom:calc(var(--pad) + 4px);z-index:10;pointer-events:none;display:flex;flex-direction:column;gap:12px;transition:opacity .5s}
+.hero h1{font-family:var(--f-display);font-weight:700;font-size:clamp(40px,7.2vw,112px);line-height:.86;letter-spacing:-.04em;text-transform:uppercase}
+html.ko .hero h1{font-family:var(--f-ko-display);letter-spacing:-.03em}
+.hero p{max-width:34ch;color:var(--ink-2)}
+.hero .mono{color:var(--muted)}
+.corner{position:fixed;right:var(--pad);bottom:calc(var(--pad) + 4px);z-index:10;display:flex;flex-direction:column;align-items:flex-end;gap:12px;transition:opacity .5s,right .45s cubic-bezier(.2,.8,.2,1)}
+.corner .mono{color:var(--muted)}
+body.reading .hero,body.reading .corner{opacity:0;pointer-events:none}
+/* 마우스를 올린 돌의 이름표 */
+#tip{position:fixed;left:0;top:0;z-index:20;pointer-events:none;max-width:280px;padding:8px 12px 9px;border-radius:2px 14px 14px 14px;background:rgba(14,15,21,.88);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.1);
+  opacity:0;transform:translate(var(--x),var(--y)) scale(.9);transform-origin:0 0;transition:opacity .18s,transform .18s cubic-bezier(.2,.9,.3,1.3)}
+#tip.on{opacity:1;transform:translate(var(--x),var(--y))}
+#tip .mono{display:block;color:var(--muted);font-size:10px;margin-bottom:3px}
+#tip b{display:block;font-family:var(--f-head);font-weight:400;font-size:14px;line-height:1.35}
+#loading{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:5;color:var(--muted);transition:opacity .6s}
+#loading.done{opacity:0;pointer-events:none}
+.r-head .r-spore{display:none}
+@media (max-width:720px){.hero p,.hero .mono{display:none}.corner .mono{display:none}}
+</style>
+</head>
+<body>
+<header id="nav"></header>
+<canvas id="pile" tabindex="-1" aria-label="A pile of stones. Each stone is an article."></canvas>
+<p id="loading" class="mono">· · ·</p>
+<div class="hero"><h1 id="title"></h1><p id="sub"></p><span class="mono" id="hint"></span></div>
+<div class="corner"><span class="mono" id="count"></span><a class="pill-btn" id="to-rhizome" href="/stone/rhizome/" data-go="rhizome"></a></div>
+<div id="tip" aria-hidden="true"></div>
+<!-- 글 목록(화면 낭독기·키보드용): 3D 돌무더기와 같은 글 -->
+<nav class="sr" aria-label="Stones"><ul id="sr-list"></ul></nav>
+
+<script src="/stone/shared.js"></script>
+<script type="module">
+import { THREE, makeStone, makeRenderer, lights } from "/stone/stones.js";
+import RAPIER from "https://cdn.jsdelivr.net/npm/@dimforge/rapier3d-compat@0.14.0/rapier.es.js";
+
+const { $, esc, clamp, REDUCE } = SP.util, t = SP.t;
+const cv = $("#pile"), tip = $("#tip");
+
+/* ===================== 조정값 ===================== */
+const DROP_EVERY = 150;      // 돌이 하나씩 떨어지는 간격(ms)
+const PULL = 7;              // 가운데로 모으는 힘(무더기가 퍼지지 않고 봉긋하게)
+const FRICTION = 1.1, BOUNCE = .04;
+const LIFT_VIEW = .42;       // 집어 든 돌이 화면 높이에서 차지하는 비율
+
+/* ===================== 장면 ===================== */
+const renderer = makeRenderer(cv);
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const scene = new THREE.Scene();
+const L = lights(renderer, scene, { env: .7, key: 2.6, rim: 1.1 });
+L.key.castShadow = true; L.key.shadow.mapSize.set(2048, 2048);
+Object.assign(L.key.shadow.camera, { left: -4, right: 4, top: 4, bottom: -4, near: .5, far: 20 }); L.key.shadow.bias = -.0004; L.key.shadow.normalBias = .02;
+scene.add(L.key.target);
+const cam = new THREE.PerspectiveCamera(30, 1, .1, 400);
+
+// 별: 아주 멀리 둥글게 뿌린 점 두 겹(천천히 돌아요)
+function starLayer(n, r, size, op, seed) {
+  const R = SP.util.rnd(seed), pos = new Float32Array(n * 3), col = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) {
+    const u = R() * 2 - 1, th = R() * 6.283, s = Math.sqrt(1 - u * u), d = r * (.8 + R() * .4);
+    pos.set([Math.cos(th) * s * d, u * d, Math.sin(th) * s * d], i * 3);
+    const w = R(); col.set(w < .15 ? [1, .78, .66] : w < .3 ? [.7, .8, 1] : [1, 1, 1], i * 3);
+  }
+  const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.BufferAttribute(pos, 3)); g.setAttribute("color", new THREE.BufferAttribute(col, 3));
+  return new THREE.Points(g, new THREE.PointsMaterial({ size, sizeAttenuation: false, vertexColors: true, transparent: true, opacity: op, depthWrite: false }));
+}
+const stars = new THREE.Group(); stars.add(starLayer(1800, 120, 1.2, .55, "s1"), starLayer(260, 100, 2.2, .85, "s2")); scene.add(stars);
+// 무더기 밑에 깔리는 희미한 먼지 빛
+const dust = (() => {
+  const c = document.createElement("canvas"); c.width = c.height = 256; const g = c.getContext("2d");
+  const gr = g.createRadialGradient(128, 128, 0, 128, 128, 128); gr.addColorStop(0, "rgba(190,170,255,.38)"); gr.addColorStop(.45, "rgba(120,110,200,.12)"); gr.addColorStop(1, "rgba(0,0,0,0)");
+  g.fillStyle = gr; g.fillRect(0, 0, 256, 256);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(6, 6), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+  m.rotation.x = -Math.PI / 2; m.position.y = .002; return m;
+})();
+scene.add(dust);
+// 돌 그림자만 받는 바닥(보이지 않음)
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.ShadowMaterial({ opacity: .45 }));
+floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+// 집어 든 돌 뒤에 깔리는 어두운 막
+const veil = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ color: 0x05060a, transparent: true, opacity: 0, depthWrite: false }));
+veil.renderOrder = 5; scene.add(veil);
+
+/* ===================== 크기 · 카메라 ===================== */
+let W = 0, H = 0;
+const view = { tx: 0, ty: .7, tz: 0, r: 1.6, off: 0, yaw: 0, pitch: 0, mx: 0, my: 0 };
+function size() {
+  W = innerWidth; H = innerHeight;
+  renderer.setSize(W, H, false); cam.aspect = W / H; cam.updateProjectionMatrix();
+}
+size(); addEventListener("resize", size);
+const panelW = () => document.body.classList.contains("reading") && W > 720 ? Math.min(600, W) : 0;
+function placeCamera(dt) {
+  // 무더기 전체가 화면에 들어오게(글 패널이 열리면 왼쪽 남은 자리 가운데로)
+  const k = 1 - Math.exp(-dt * 2.2);
+  view.yaw += ((REDUCE ? 0 : view.mx * .16) - view.yaw) * k; view.pitch += ((REDUCE ? 0 : view.my * .06) - view.pitch) * k;
+  const fov = cam.fov * Math.PI / 180, fit = Math.max(view.r / Math.tan(fov / 2) / Math.min(1, cam.aspect), 3.2);
+  view.fit = fit;
+  const yaw = .35 + view.yaw, pitch = .3 + view.pitch;
+  cam.position.set(view.tx + Math.sin(yaw) * Math.cos(pitch) * fit, view.ty + Math.sin(pitch) * fit, view.tz + Math.cos(yaw) * Math.cos(pitch) * fit);
+  cam.lookAt(view.tx, view.ty, view.tz);
+  view.off += (panelW() / 2 - view.off) * (1 - Math.exp(-dt * 5));
+  if (Math.abs(view.off) > .5) cam.setViewOffset(W, H, view.off, 0, W, H); else cam.clearViewOffset();
+}
+
+/* ===================== 물리 ===================== */
+await RAPIER.init();
+const world = new RAPIER.World({ x: 0, y: -9.81, z: 0 });
+world.createCollider(RAPIER.ColliderDesc.cuboid(40, .5, 40).setTranslation(0, -.5, 0).setFriction(1));
+const stones = [];          // { p, g, rb, size }
+const byPost = new Map();
+let picked = null;          // 집어 든 돌
+
+function addBody(s, pos, quat, vel) {
+  const rb = world.createRigidBody(RAPIER.RigidBodyDesc.dynamic().setTranslation(pos.x, pos.y, pos.z).setRotation(quat)
+    .setLinearDamping(.08).setAngularDamping(1.4).setCcdEnabled(true).setLinvel(vel.x, vel.y, vel.z)
+    .setAngvel({ x: (Math.random() - .5) * 4, y: (Math.random() - .5) * 4, z: (Math.random() - .5) * 4 }));
+  const hp = s.g.userData.shape.hullPts, pts = new Float32Array(hp.length);
+  for (let i = 0; i < hp.length; i++) pts[i] = hp[i] * s.size;
+  const desc = RAPIER.ColliderDesc.convexHull(pts) || RAPIER.ColliderDesc.ball(s.size * .42);
+  world.createCollider(desc.setFriction(FRICTION).setRestitution(BOUNCE).setDensity(1), rb);
+  s.rb = rb;
+}
+function pileTop() { let y = 0; stones.forEach(s => { if (s.rb && s !== picked) y = Math.max(y, s.rb.translation().y + s.size * .5); }); return y; }
+const rq = () => new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.random() * 6.28, Math.random() * 6.28, Math.random() * 6.28));
+function drop(s, from) {
+  const a = Math.random() * 6.28, d = Math.sqrt(Math.random()) * .35;
+  const pos = from || { x: Math.cos(a) * d, y: Math.max(2.6, pileTop() + 1.4 + s.size * .5), z: Math.sin(a) * d };
+  addBody(s, pos, from ? s.g.quaternion : rq(), { x: 0, y: from ? -1 : -2.5, z: 0 });
+}
+function stepPhysics(dt) {
+  stones.forEach(s => {
+    if (!s.rb || s.rb.isSleeping()) return;
+    const p = s.rb.translation(), m = s.rb.mass();
+    s.rb.resetForces(false); s.rb.addForce({ x: -p.x * PULL * m, y: 0, z: -p.z * PULL * m }, false);
+  });
+  acc += Math.min(dt, .1);
+  let n = 0; while (acc >= 1 / 60 && n++ < 8) { world.step(); acc -= 1 / 60; }
+  if (n > 8) acc = 0;
+  stones.forEach(s => { if (!s.rb) return; const p = s.rb.translation(), q = s.rb.rotation(); s.g.position.set(p.x, p.y, p.z); s.g.quaternion.set(q.x, q.y, q.z, q.w); });
+}
+let acc = 0;
+
+/* ===================== 돌을 차례로 떨어뜨려 쌓기 ===================== */
+let order = [], dropped = 0, lastDrop = 0;
+function build() {
+  stones.forEach(s => { scene.remove(s.g); if (s.rb) world.removeRigidBody(s.rb); });
+  stones.length = 0; byPost.clear(); picked = null; dropped = 0;
+  // 큰 돌이 대체로 먼저(아래에) — 조금씩 뒤섞어서 매번 다른 무더기
+  order = [...SP.posts].map(p => ({ p, k: p._stone.size + Math.random() * .55 })).sort((a, b) => b.k - a.k).map(x => x.p);
+  order.forEach(p => {
+    const s = { p, g: null, rb: null, size: p._stone.size, ready: false };
+    stones.push(s); byPost.set(p.id, s);
+    makeStone(p._stone).then(g => { g.scale.setScalar(s.size); g.userData.s = s; s.g = g; s.ready = true; }).catch(() => {});
+  });
+  $("#sr-list").innerHTML = order.map(p => `<li><button data-read="${esc(p.id)}">${esc(SP.titleOf(p))}</button></li>`).join("");
+  renderChrome();
+}
+function dropNext(now) {
+  if (dropped >= stones.length || now - lastDrop < DROP_EVERY) return;
+  const s = stones.find(x => x.ready && !x.rb && !x.dropped); if (!s) return;
+  s.dropped = true; dropped++; lastDrop = now;
+  scene.add(s.g); drop(s);
+  $("#loading").classList.add("done");
+  if (dropped === stones.length) setTimeout(openFromHash, 1400);
+}
+
+/* ===================== 마우스: 덜걱 · 이름표 ===================== */
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+let hot = null, ptr = null, down = null;
+function stoneAt(x, y) {
+  ndc.set(x / W * 2 - 1, -(y / H) * 2 + 1); ray.setFromCamera(ndc, cam);
+  const hits = ray.intersectObjects(stones.filter(s => s.g && s.g.parent).map(s => s.g.userData.hit), false);
+  return hits.length ? hits[0].object.parent.parent.userData.s : null;
+}
+function setHot(s) {
+  if (s === hot) return;
+  if (hot && hot !== picked) hot.g.userData.rattle.set(false);
+  hot = s;
+  if (s && s !== picked) s.g.userData.rattle.set(true);
+  cv.classList.toggle("hot", !!s);
+  document.documentElement.classList.toggle("stone-hot", !!s);
+  if (s && s !== picked) { tip.innerHTML = `<span class="mono">${esc(t("article"))} / ${SP.no(s.p)} · ${s.p._chars.toLocaleString()} ${esc(t("chars"))}</span><b>${esc(SP.titleOf(s.p))}</b>`; tip.classList.add("on"); }
+  else tip.classList.remove("on");
+}
+cv.addEventListener("pointermove", e => {
+  ptr = e; view.mx = e.clientX / W - .5; view.my = e.clientY / H - .5;
+  tip.style.setProperty("--x", e.clientX + 16 + "px"); tip.style.setProperty("--y", e.clientY + 14 + "px");
+  if (drag) dragTo(e);
+});
+cv.addEventListener("pointerleave", () => { ptr = null; setHot(null); });
+cv.addEventListener("pointerdown", e => {
+  down = { x: e.clientX, y: e.clientY };
+  const s = stoneAt(e.clientX, e.clientY);
+  if (s && s === picked) { drag = { x: e.clientX, y: e.clientY, vx: 0, vy: 0 }; cv.setPointerCapture(e.pointerId); }
+});
+cv.addEventListener("pointerup", e => {
+  const moved = down ? Math.hypot(e.clientX - down.x, e.clientY - down.y) : 99; down = null;
+  if (drag) { drag.spin = true; spinV = { x: drag.vx, y: drag.vy }; drag = null; if (moved > 5) return; }
+  if (moved > 6) return;
+  const s = stoneAt(e.clientX, e.clientY);
+  if (s && s !== picked) SP.read(s.p.id);
+  else if (!s && picked) SP.unread();
+});
+
+/* ===================== 클릭: 집어 들기 → 글 읽기 → 다시 무더기 위로 ===================== */
+// 집어 든 돌은 무더기에서 빠져나와(남은 돌이 그 빈자리로 우르르 내려앉아요) 화면 앞으로 떠오르고 천천히 돌아요.
+// 같은 실(링크·태그)로 이어진 돌들은 그 순간 함께 덜걱거려요. 글을 닫으면 무더기 꼭대기에 다시 툭 떨어져요.
+let lift = null, drag = null, spinV = { x: 0, y: 0 };
+const spinQ = new THREE.Quaternion();
+function pick(s) {
+  if (!s || !s.g || s === picked) return;
+  if (picked) putBack();
+  picked = s; hot === s && setHot(null);
+  s.g.userData.rattle.set(false);
+  if (s.rb) { world.removeRigidBody(s.rb); s.rb = null; }
+  stones.forEach(o => o.rb && o.rb.wakeUp());
+  lift = { s, t0: performance.now(), p0: s.g.position.clone(), q0: s.g.quaternion.clone(), k0: s.g.scale.x, back: false };
+  spinQ.copy(s.g.quaternion);
+  // 같은 실에 꿰인 돌들이 함께 덜걱
+  const near = new Set([...SP.linkedOf(s.p.id).map(o => o.id), ...SP.posts.filter(o => o !== s.p && o._concepts.some(c => s.p._concepts.includes(c))).map(o => o.id)]);
+  [...near].forEach((id, i) => { const o = byPost.get(id); if (o && o.g) setTimeout(() => o.g.userData.rattle.bump(.9), 120 + i * 55); });
+}
+function putBack() {
+  const s = picked; if (!s) return;
+  picked = null;
+  lift = { s, t0: performance.now(), p0: s.g.position.clone(), q0: s.g.quaternion.clone(), k0: s.g.scale.x, back: true };
+}
+function liftTarget(s) {
+  // 카메라 앞, 화면 높이의 LIFT_VIEW 만큼 크게
+  const dir = new THREE.Vector3(); cam.getWorldDirection(dir);
+  const D = view.fit * .4, pos = cam.position.clone().addScaledVector(dir, D);
+  const h = 2 * D * Math.tan(cam.fov * Math.PI / 360);
+  return { pos, k: h * Math.min(LIFT_VIEW, .55 * (W - panelW()) / H) };
+}
+const ease = u => u < .5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
+function animLift(now, dt) {
+  // 덮개: 집어 든 돌 바로 뒤
+  const want = picked ? .55 : 0;
+  veil.material.opacity += (want - veil.material.opacity) * (1 - Math.exp(-dt * 6));
+  if (veil.material.opacity > .003) { const dir = new THREE.Vector3(); cam.getWorldDirection(dir); const vd = view.fit * .62; veil.position.copy(cam.position).addScaledVector(dir, vd); veil.quaternion.copy(cam.quaternion); veil.scale.setScalar(vd * 3); veil.visible = true; } else veil.visible = false;
+  if (!lift) {
+    if (picked) {               // 떠 있는 동안: 천천히 돌거나, 끌면 그 방향으로
+      const g = picked.g, tg = liftTarget(picked);
+      g.position.lerp(tg.pos, 1 - Math.exp(-dt * 6)); g.scale.setScalar(tg.k);
+      if (!drag) { spinV.x *= Math.pow(.05, dt); spinV.y *= Math.pow(.05, dt); }
+      const base = REDUCE ? 0 : .35;
+      const ax = new THREE.Vector3(0, 1, 0), ay = new THREE.Vector3(1, 0, 0).applyQuaternion(cam.quaternion);
+      g.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(ax, (base + spinV.x) * dt)).premultiply(new THREE.Quaternion().setFromAxisAngle(ay, spinV.y * dt));
+    }
+    return;
+  }
+  const s = lift.s, g = s.g, u = clamp((now - lift.t0) / (lift.back ? 650 : 900), 0, 1), e = REDUCE ? 1 : ease(u);
+  if (!lift.back) {
+    const tg = liftTarget(s);
+    g.position.lerpVectors(lift.p0, tg.pos, e); g.position.y += Math.sin(e * Math.PI) * .6;
+    g.scale.setScalar(lift.k0 + (tg.k - lift.k0) * e);
+    g.quaternion.copy(lift.q0).premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), e * 2.4));
+    if (u >= 1) lift = null;
+  } else {
+    const a = Math.random() * 6.28, top = { x: Math.cos(a) * .3, y: Math.max(2.4, pileTop() + 1 + s.size * .5), z: Math.sin(a) * .3 };
+    lift.to = lift.to || new THREE.Vector3(top.x, top.y, top.z);
+    g.position.lerpVectors(lift.p0, lift.to, e);
+    g.scale.setScalar(lift.k0 + (s.size - lift.k0) * e);
+    if (u >= 1) { g.scale.setScalar(s.size); drop(s, { x: g.position.x, y: g.position.y, z: g.position.z }); lift = null; }
+  }
+}
+function dragTo(e) {
+  const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY;
+  const g = picked && picked.g; if (!g) return;
+  const ay = new THREE.Vector3(1, 0, 0).applyQuaternion(cam.quaternion);
+  g.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), dx * .01)).premultiply(new THREE.Quaternion().setFromAxisAngle(ay, dy * .01));
+  drag.vx = dx * .6; drag.vy = dy * .6;
+}
+
+/* ===================== 주소 = 상태 (#p=글ID) ===================== */
+SP.read = id => {
+  const s = byPost.get(id); if (!s || !s.g) return;
+  pick(s); SP.openReader(id);
+  if (location.hash !== "#p=" + encodeURIComponent(id)) history.pushState(null, "", "#p=" + encodeURIComponent(id));
+};
+SP.unread = () => { SP.closeReader(); };
+SP.readerHooks.close.push(() => { putBack(); if (location.hash) history.pushState(null, "", location.pathname + location.search); });
+function openFromHash() {
+  const id = new URLSearchParams(location.hash.slice(1)).get("p");
+  if (id && byPost.has(id)) { if (!picked || picked.p.id !== id) SP.read(id); }
+  else if (picked) SP.closeReader();
+}
+addEventListener("popstate", openFromHash);
+document.addEventListener("keydown", e => { if (e.key === "Escape" && picked && !document.querySelector("#about.open")) SP.unread(); });
+
+/* ===================== 그리기 ===================== */
+let last = performance.now();
+const box = new THREE.Box3(), tmp = new THREE.Vector3();
+function frame(now) {
+  requestAnimationFrame(frame);
+  const raw = (now - last) / 1000; last = now;
+  tick(now, raw); renderer.render(scene, cam);
+}
+function tick(now, raw) {
+  const dt = Math.min(.05, raw);
+  dropNext(now);
+  stepPhysics(Math.min(.1, raw));
+  // 무더기 크기에 맞춰 카메라가 천천히 물러나요
+  // 아직 떨어지는 중인 돌은 빼고, 내려앉은 돌만으로 무더기 크기를 재요
+  box.makeEmpty(); stones.forEach(s => { if (!s.rb || s === picked) return; const v = s.rb.linvel(); if (s.rb.isSleeping() || Math.hypot(v.x, v.y, v.z) < 1.2) box.expandByPoint(tmp.copy(s.g.position)); });
+  if (!box.isEmpty()) {
+    const c = box.getCenter(tmp), r = Math.max(1.3, box.getSize(new THREE.Vector3()).length() * .5 + .7), k = 1 - Math.exp(-dt * 1.2);
+    view.tx += (c.x - view.tx) * k; view.tz += (c.z - view.tz) * k; view.ty += (Math.max(.5, c.y + .15) - view.ty) * k; view.r += (r - view.r) * k;
+  }
+  placeCamera(dt);
+  animLift(now, dt);
+  if (ptr && !drag && !lift) setHot(stoneAt(ptr.clientX, ptr.clientY));
+  stones.forEach(s => { if (!s.g) return; const R = s.g.userData.rattle; R.step(dt); R.apply(s.g.userData.body, 1); });
+  if (!REDUCE) stars.rotation.y += dt * .004;
+  L.key.target.position.set(view.tx, 0, view.tz); L.key.position.set(view.tx - 3, 7, view.tz + 4);
+}
+// 점검용(?debug): 화면이 숨겨져 프레임이 안 돌 때 시간을 앞당겨 봐요 — PILE.run(초)
+if (/[?&]debug\b/.test(location.search)) window.PILE = { run(sec) { let t = performance.now(); for (let i = 0; i < sec * 60; i++) { t += 1000 / 60; tick(t, 1 / 60); } last = performance.now(); renderer.render(scene, cam); }, pick: id => SP.read(id), get stones() { return stones; } };
+
+/* ===================== 문구 ===================== */
+function renderChrome() {
+  document.title = `${t("navStones")} · ${t("titleFlat")}`;
+  SP.renderNav("stones");
+  $("#title").innerHTML = t("title").map(esc).join("<br>");
+  $("#sub").textContent = t("subtitle"); $("#hint").textContent = t("pileHint");
+  $("#count").textContent = `${SP.posts.length} ${SP.lang === "ko" ? "개의 돌" : "stones"}`;
+  $("#to-rhizome").textContent = t("navRhizome") + " →";
+}
+SP.onLang(() => { renderChrome(); if (picked) SP.openReader(picked.p.id, { replace: true }); });
+SP.onData(build);
+SP.renderNav("stones");
+await SP.ready;
+build();
+requestAnimationFrame(frame);
+</script>
+<script>
+// WebGL이 없으면 돌무더기 대신 목록을 보여줘요
+if (!window.SP || !SP.hasGL) addEventListener("DOMContentLoaded", () => { const n = document.querySelector(".sr"); if (n) n.className = ""; document.getElementById("loading").textContent = "3D is not available — open the Rhizome for the list."; });
+</script>
+</body>
+</html>
