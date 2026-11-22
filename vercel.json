@@ -2,15 +2,23 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "outputDirectory": "public",
   "buildCommand": "",
-  "headers": [
+  "routes": [
     {
-      "source": "/admin(.*)",
-      "headers": [
+      "src": "/admin(.*)",
+      "headers": {
+        "X-Robots-Tag": "noindex"
+      },
+      "continue": true
+    },
+    {
+      "src": "/",
+      "has": [
         {
-          "key": "X-Robots-Tag",
-          "value": "noindex"
+          "type": "host",
+          "value": "fluffydough.xyz"
         }
-      ]
+      ],
+      "dest": "/stone/index.html"
     }
   ]
 }

@@ -149,7 +149,7 @@ const mix = (a, b, k) => a.map((v, i) => Math.round(v + (b[i] - v) * k));
 const css = (c, a = 1) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
 
 /* ===================== data (어드민과 같은 공개 API) ===================== */
-const API = /(^|\.)rhizome-webzine\.vercel\.app$/.test(location.hostname) || /\.vercel\.app$/.test(location.hostname) ? "/api/rhizome" : "https://rhizome-webzine.vercel.app/api/rhizome";
+const API = /\.vercel\.app$/.test(location.hostname) || /(^|\.)fluffydough\.xyz$/.test(location.hostname) ? "/api/rhizome" : "https://rhizome-webzine.vercel.app/api/rhizome";   // 같은 서버면 같은 주소로
 const CACHE_KEY = "rhizome-webzine-live";
 let DATA = SAMPLE, src = "sample", shown = "sample";
 const valid = j => j && Array.isArray(j.nodes) && j.nodes.some(n => n && n.title);
@@ -545,7 +545,7 @@ document.addEventListener("click", e => {
 function renderNav(active) {
   if (active !== undefined) navActive = active;
   const el = $("#nav"); if (!el) return;
-  const home = "/stone/", rz = "/stone/rhizome/";
+  const home = /(^|\.)fluffydough\.xyz$/.test(location.hostname) ? "/" : "/stone/", rz = "/stone/rhizome/";   // fluffydough.xyz에선 돌무더기가 첫 화면(/)
   el.innerHTML = `
     <a class="brand" href="${home}"><span class="brand-mark" aria-hidden="true">${hasGL ? '<canvas class="brand-stone"></canvas>' : ""}</span><span>${esc(t("titleFlat"))}</span></a>
     <nav class="links" aria-label="Main">

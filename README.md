@@ -76,6 +76,11 @@ fetch("https://rhizome-webzine.vercel.app/api/rhizome")
 - API: `api/stone.js` (어드민 비밀번호). `ANTHROPIC_API_KEY` 필요 — 키를 넣기 전에 만든 배포에는 키가 없으니 새로 배포해서 써요.
 - 점검: `node --import ./scripts/spore-test/reg.mjs scripts/check-stone.mjs`
 
+## 도메인
+- `fluffydough.xyz` → 이 프로젝트. 첫 화면(`/`)이 돌무더기(`/stone/`)예요(`vercel.json`의 `routes`, 그 도메인일 때만). `www.fluffydough.xyz`는 `fluffydough.xyz`로 넘어가요(308). 나머지 경로(`/stone/rhizome/`, `/admin`, `/api/…`)는 그대로.
+- `rhizome-webzine.vercel.app`의 첫 화면은 예전 웹진 그대로.
+- DNS는 Squarespace에서 관리(A 레코드 → Vercel). 예전 ‘Designer & Maker’ 사이트(Vercel 프로젝트 `fluffydough-xyz`)는 도메인만 빠졌고 프로젝트는 남아 있어요.
+
 ## 다시 배포
 
 ```bash
