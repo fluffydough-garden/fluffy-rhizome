@@ -19,8 +19,8 @@ body{background:radial-gradient(50% 45% at 50% 58%,rgba(70,54,120,.28),transpare
 #pile.orbit{cursor:grabbing}
 /* 왼쪽 아래 제목 · 오른쪽 아래 개수와 리좀으로 */
 .hero{position:fixed;left:var(--pad);bottom:calc(var(--pad) + 4px);z-index:10;pointer-events:none;display:flex;flex-direction:column;gap:12px;transition:opacity .5s}
-.hero h1{font-family:var(--f-display);font-weight:700;font-size:clamp(40px,7.2vw,112px);line-height:.86;letter-spacing:-.04em;text-transform:uppercase}
-html.ko .hero h1{font-family:var(--f-ko-display);letter-spacing:-.03em}
+.hero h1{font-family:var(--f-display);font-weight:700;font-size:clamp(60px,10.8vw,168px);line-height:.86;letter-spacing:-.04em;text-transform:uppercase}
+html.ko .hero h1{font-family:var(--f-ko-display);letter-spacing:-.03em;line-height:1.2}   /* 한글은 줄간격 120% */
 .hero p{max-width:34ch;color:var(--ink-2)}
 .hero .mono{color:var(--muted)}
 .corner{position:fixed;right:var(--pad);bottom:calc(var(--pad) + 4px);z-index:10;display:flex;flex-direction:column;align-items:flex-end;gap:12px;transition:opacity .5s,right .45s cubic-bezier(.2,.8,.2,1)}
