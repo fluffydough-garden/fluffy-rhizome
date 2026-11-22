@@ -1285,6 +1285,7 @@ function modelWarn(s) {
   if (s.bytes > B.bytes) w.push(`파일이 ${fmtMB(s.bytes)}예요(권장 ${fmtMB(B.bytes)} 이하)`);
   if (s.triangles > B.triangles) w.push(`삼각형이 ${s.triangles.toLocaleString()}개예요(권장 ${B.triangles.toLocaleString()}개 이하)`);
   const big = (s.textures || []).filter(t => Math.max(t.w, t.h) > B.texture); if (big.length) w.push(`${B.texture}px보다 큰 텍스처가 ${big.length}장 있어요`);
+  if (!(s.extensions || []).includes("EXT_meshopt_compression")) w.push("meshopt 압축이 아니에요(웹진에 올리는 GLB는 meshopt 압축본으로)");
   return w;
 }
 const statLine = s => `${fmtMB(s.bytes)} · 삼각형 ${Number(s.triangles || 0).toLocaleString()} · 텍스처 ${(s.textures || []).length}장${(s.textures || []).length ? ` (${[...new Set(s.textures.map(t => t.w ? `${t.w}px` : "?"))].join(", ")})` : ""}${(s.extensions || []).length ? ` · ${s.extensions.map(x => x.replace(/^(KHR_|EXT_)/, "")).join(", ")}` : ""}`;
@@ -1300,7 +1301,7 @@ function renderModelBox() {
   box.innerHTML = `${m.candidate ? one(m.candidate, "candidate") : ""}${m.approved ? one(m.approved, "approved") : ""}
     ${!m.candidate && !m.approved ? `<p class="hint">아직 올린 모델이 없어요. 지금은 기본 돌 12개 중 하나가 나와요.</p>` : ""}
     ${w ? `<div class="mdl-actions"><button class="btn outline sm" data-action="model-pick" ${MDL.busy ? "disabled" : ""}>${icon("upload")}${m.candidate || m.approved ? "다른 GLB 올리기" : "GLB 올리기"}</button>
-      <span class="mdl-progress">${esc(MDL.progress || `GLB 한 파일 · 최대 ${fmtMB(STX?.modelMaxBytes || 41943040)} · 권장 ${fmtMB(STX?.modelBudget?.bytes || 6291456)} 이하, 삼각형 ${(STX?.modelBudget?.triangles || 120000).toLocaleString()}개 이하, 텍스처 ${STX?.modelBudget?.texture || 2048}px 이하`)}</span></div>
+      <span class="mdl-progress">${esc(MDL.progress || `meshopt 압축 GLB 한 파일 · 최대 ${fmtMB(STX?.modelMaxBytes || 41943040)} · 권장 ${fmtMB(STX?.modelBudget?.bytes || 6291456)} 이하, 삼각형 ${(STX?.modelBudget?.triangles || 120000).toLocaleString()}개 이하, 텍스처 ${STX?.modelBudget?.texture || 2048}px 이하`)}</span></div>
       <input type="file" id="glb-file" accept=".glb,model/gltf-binary" hidden>` : ""}`;
   if (m.candidate || m.approved) stones3d().then(M => box.querySelectorAll("canvas.mdl-view").forEach(cv =>
     M.preview(cv, { src: cv.dataset.src, custom: true, gem: false, hue: 0, sat: 1 }, () => { cv.hidden = true; cv.nextElementSibling.hidden = false; }))).catch(() => {});
@@ -1312,7 +1313,7 @@ async function modelUpload(file) {
   MDL.busy = true; MDL.progress = "파일을 재는 중…"; renderModelBox();
   try {
     const stats = await inspectGlb(file), warn = modelWarn(stats);
-    if (warn.length && !(await new Promise(r => { if (!confirm(`무거운 모델이에요. 웹진이 느려질 수 있어요.\n\n· ${warn.join("\n· ")}\n\n그래도 올릴까요?`)) r(false); else r(true); }))) { MDL.progress = ""; return; }
+    if (warn.length && !(await new Promise(r => { if (!confirm(`확인해 주세요. 웹진이 느려질 수 있어요.\n\n· ${warn.join("\n· ")}\n\n그래도 올릴까요?`)) r(false); else r(true); }))) { MDL.progress = ""; return; }
     MDL.progress = "올리는 중… 0%"; renderModelBox();
     const { upload } = await blobClient();
     const blob = await upload(`stones/${id}.glb`, file, { access: "public", handleUploadUrl: "/api/stone-upload", headers: { authorization: "Bearer " + encodeURIComponent(PW) }, contentType: "model/gltf-binary", multipart: file.size > 8 * 1048576,

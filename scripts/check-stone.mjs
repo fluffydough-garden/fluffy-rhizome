@@ -35,7 +35,7 @@ check(r.dna.primary_theme.value === "technology" && r.dna.argument_count.value =
 check(r.low.includes("secondary_theme") && r.low.includes("exhibition_format") && !r.low.includes("primary_theme"), "low confidence flagged");
 check(r.color.mode === "blend" && r.color.primary === "#6d86a0" && r.color.secondary === "#9b5e4f", "two themes → 80/20");
 check(/steel blue/.test(r.imagePrompt) && /hollow geode/.test(r.imagePrompt) && /concentric/.test(r.imagePrompt) && /chiseled/.test(r.imagePrompt), "image prompt");
-check(/GLB/.test(r.modelPrompt) && /watertight/.test(r.modelPrompt) && /cavity is real geometry/.test(r.modelPrompt) && /high roughness/.test(r.modelPrompt) && /reference for a 3D model/.test(r.imagePrompt), "3D model prompt");
+check(/EXT_meshopt_compression/.test(r.modelPrompt) && /not Draco/.test(r.modelPrompt) && /GLB/.test(r.modelPrompt) && /watertight/.test(r.modelPrompt) && /cavity is real geometry/.test(r.modelPrompt) && /high roughness/.test(r.modelPrompt) && /reference for a 3D model/.test(r.imagePrompt), "3D model prompt");
 check(r.webMotion.camera === "dolly-in" && !/camera|push-in/i.test(r.modelPrompt.split("OUTPUT")[1]), "motion goes to the web viewer, not the model");
 check(sent.output_config?.format && sent.messages[0].content.includes("반복하는 기계") && sent.system.includes("정의된 값 중에서만"), "sends post + structured output");
 
@@ -75,7 +75,7 @@ const B = "https://x.public.blob.vercel-storage.com/";
 files.set("stones/a1-aaa.glb", "glb1"); files.set("stones/a1-bbb.glb", "glb2");
 check((await st.POST(req("POST", "/api/stone", { action: "model-use", id: "a1", url: "https://evil.example/x.glb" }))).status === 400, "model-use rejects foreign url");
 r = await J(await st.POST(req("POST", "/api/stone", { action: "model-use", id: "a1", url: B + "stones/a1-aaa.glb", stats: { bytes: 9e6, triangles: 200000, textures: [{ w: 4096, h: 4096, type: "image/png" }], name: "rock.glb" } })));
-check(r.stoneModel.candidate.url.endsWith("a1-aaa.glb") && r.stoneModel.candidate.warnings.length === 3 && !r.stoneModel.approved, "model-use → candidate + warnings");
+check(r.stoneModel.candidate.url.endsWith("a1-aaa.glb") && r.stoneModel.candidate.warnings.length === 4 && r.stoneModel.candidate.warnings.some(x => /meshopt/.test(x)) && !r.stoneModel.approved, "model-use → candidate + warnings (incl. not meshopt)");
 let pubN = (await J(await pub.GET(new Request("https://site/api/rhizome")))).nodes.find(x => x.id === "a1");
 check(pubN.stoneModel === null, "candidate not public");
 r = await J(await st.POST(req("POST", "/api/stone", { action: "model-approve", id: "a1" })));
