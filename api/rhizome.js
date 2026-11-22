@@ -40,6 +40,8 @@ export async function GET(req) {
       complexity: p.spore.complexity ?? null, connectivity: p.spore.connectivity ?? null, symmetry: p.spore.symmetry ?? null,
       morphology: p.spore.morphology || "", palette: p.spore.palette || [], seed: p.spore.seed || ""
     } : null,
+    // 글마다 올린 3D 모델(GLB): 승인된 것만
+    stoneModel: p.stoneModel?.approved ? { url: p.stoneModel.approved.url, bytes: p.stoneModel.approved.bytes || 0, triangles: p.stoneModel.approved.triangles || 0 } : null,
     // 돌 DNA: 값만 공개(근거 인용·확신도는 어드민에만). confirmed = 편집자가 확인함
     stone: p.stone && p.stone.dna ? { ...dnaValues(p.stone.dna), confirmed: !!p.stone.confirmed, summary: dnaSummary(p.stone.dna), webMotion: webMotionOf(p.stone.dna),
       colors: (r => r ? [r.primary.hex, ...(r.secondary ? [r.secondary.hex] : [])] : [])(colorRule(p.stone.dna)), version: p.stone.version || "" } : null

@@ -36,6 +36,7 @@ export async function POST(req) {
       if (o.coll === "posts") { delete data.spore; if (coll[o.id]?.spore) data.spore = coll[o.id].spore; }
       // 돌 DNA도 /api/stone이 따로 관리
       if (o.coll === "posts") { delete data.stone; if (coll[o.id]?.stone) data.stone = coll[o.id].stone; }
+      if (o.coll === "posts") { delete data.stoneModel; if (coll[o.id]?.stoneModel) data.stoneModel = coll[o.id].stoneModel; }
       if (o.op === "set") coll[o.id] = data;
       else if (o.op === "update") { if (coll[o.id]) coll[o.id] = { ...coll[o.id], ...data }; }
       else delete coll[o.id];

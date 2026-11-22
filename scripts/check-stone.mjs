@@ -67,5 +67,27 @@ r = await J(await st.POST(req("POST", "/api/stone", { action: "clear", id: "a1" 
 check(r.stone === null, "clear");
 check((await st.POST(req("POST", "/api/stone", { action: "save", id: "zz", dna: {} }))).status === 404, "unknown post → 404");
 
+// 3D 모델(GLB): 업로드 토큰은 어드민만, 저장소 주소만 받음, 후보 → 승인 → 공개, 글을 저장해도 남음, 버리면 파일도 지움
+const up = await import(root + "/api/stone-upload.js");
+check((await up.POST(req("POST", "/api/stone-upload", { type: "blob.generate-client-token", payload: { pathname: "stones/a1.glb" } }, "nope"))).status === 401, "upload token needs admin");
+check((await up.POST(req("POST", "/api/stone-upload", { type: "blob.upload-completed", payload: {} }))).status === 400, "upload callback not accepted");
+const B = "https://x.public.blob.vercel-storage.com/";
+files.set("stones/a1-aaa.glb", "glb1"); files.set("stones/a1-bbb.glb", "glb2");
+check((await st.POST(req("POST", "/api/stone", { action: "model-use", id: "a1", url: "https://evil.example/x.glb" }))).status === 400, "model-use rejects foreign url");
+r = await J(await st.POST(req("POST", "/api/stone", { action: "model-use", id: "a1", url: B + "stones/a1-aaa.glb", stats: { bytes: 9e6, triangles: 200000, textures: [{ w: 4096, h: 4096, type: "image/png" }], name: "rock.glb" } })));
+check(r.stoneModel.candidate.url.endsWith("a1-aaa.glb") && r.stoneModel.candidate.warnings.length === 3 && !r.stoneModel.approved, "model-use → candidate + warnings");
+let pubN = (await J(await pub.GET(new Request("https://site/api/rhizome")))).nodes.find(x => x.id === "a1");
+check(pubN.stoneModel === null, "candidate not public");
+r = await J(await st.POST(req("POST", "/api/stone", { action: "model-approve", id: "a1" })));
+check(r.stoneModel.approved.url.endsWith("a1-aaa.glb") && !r.stoneModel.candidate, "approve");
+await db.POST(req("POST", "/api/db", { ops: [{ op: "set", coll: "posts", id: "a1", data: { title: "반복하는 기계", body: "또 고친 본문", status: "published" } }] }));
+pubN = (await J(await pub.GET(new Request("https://site/api/rhizome")))).nodes.find(x => x.id === "a1");
+check(pubN.stoneModel && pubN.stoneModel.url.endsWith("a1-aaa.glb") && pubN.stoneModel.triangles === 200000, "approved is public and survives post save");
+r = await J(await st.POST(req("POST", "/api/stone", { action: "model-use", id: "a1", url: B + "stones/a1-bbb.glb", stats: { bytes: 1e6 } })));
+r = await J(await st.POST(req("POST", "/api/stone", { action: "model-reject", id: "a1" })));
+check(!r.stoneModel.candidate && r.stoneModel.approved && !files.has("stones/a1-bbb.glb") && files.has("stones/a1-aaa.glb"), "reject deletes candidate file only");
+r = await J(await st.POST(req("POST", "/api/stone", { action: "model-remove", id: "a1" })));
+check(r.stoneModel === null && !files.has("stones/a1-aaa.glb"), "remove deletes approved file");
+
 console.log(`${ok} ok, ${bad} failed`);
 process.exit(bad ? 1 : 0);

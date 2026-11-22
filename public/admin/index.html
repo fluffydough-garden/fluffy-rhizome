@@ -358,6 +358,15 @@ tr.clickable{cursor:pointer}
 .tag-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .tag-bar .search{flex:1;min-width:200px}
 .tag-name{font-weight:500}
+/* 돌 3D 모델(GLB) */
+.mdl{display:flex;flex-direction:column;gap:10px;padding:12px;border:1px solid var(--border);border-radius:12px}
+.mdl .mdl-view{display:block;width:100%;height:260px;background:#0b0b0d;border-radius:8px;cursor:grab;touch-action:none}
+.mdl .mdl-err{font-size:12.5px;color:var(--destructive)}
+.mdl .mdl-head{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500}
+.mdl .mdl-stats{font-size:12px;color:var(--muted-foreground)}
+.mdl .mdl-warn{margin:0;padding-left:1.2em;font-size:12.5px;color:var(--warning,#b45309)}
+.mdl-actions{display:flex;flex-wrap:wrap;gap:8px}
+.mdl-progress{font-size:12.5px;color:var(--muted-foreground)}
 /* 돌 DNA */
 .st-swatch{position:relative;height:72px;border-radius:12px;overflow:hidden;display:flex;align-items:flex-end;padding:10px 12px;color:#fff;font-size:12.5px;font-weight:500;text-shadow:0 1px 2px rgba(0,0,0,.35)}
 .st-swatch .sec{position:absolute;right:0;top:0;bottom:0;width:20%}
@@ -429,6 +438,12 @@ kbd{font-family:var(--font-mono);font-size:11px;border:1px solid var(--border);b
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
 </head>
 <body>
 <div class="app">
@@ -860,7 +875,7 @@ async function loadStoneSchema() {
   if (STX) return;
   try { STX = await api("/api/stone?schema=1"); if (S.view === "stones") renderView(); } catch {}
 }
-const stoneState = p => !p.stone ? "none" : p.stone.confirmed ? "confirmed" : "unconfirmed";
+const stoneState = p => !p.stone?.dna ? "none" : p.stone.confirmed ? "confirmed" : "unconfirmed";
 const ST_ST = { none: "미분석", unconfirmed: "확인 필요", confirmed: "확정" };
 const dv = (d, k) => d && d[k] ? d[k].value : "";
 function optList(k) {
@@ -918,6 +933,7 @@ function stoneCard(p) {
     ${swatch(d)}
     ${p.stone ? `<dl class="st-attrs">${row("experience", "형태")}${row("interpretive_lens", "무늬")}${row("critical_stance", "표면")}${row("argument_count", "내포물")}${row("narrative_direction", "움직임")}${low.has("primary_theme") || low.has("secondary_theme") ? row(low.has("primary_theme") ? "primary_theme" : "secondary_theme", "색") : ""}</dl>`
       : `<p class="hint">아직 분석하지 않았어요. ‘AI 분석’을 누르거나 직접 속성을 골라 주세요.</p>`}
+    ${p.stoneModel ? `<div class="sc-chips">${p.stoneModel.approved ? `<span class="chip">${icon("check")}3D 모델 승인됨 · ${fmtMB(p.stoneModel.approved.bytes)}</span>` : ""}${p.stoneModel.candidate ? `<span class="chip">3D 모델 검토 대기 · ${fmtMB(p.stoneModel.candidate.bytes)}</span>` : ""}</div>` : ""}
     <div class="sc-actions">
       ${w ? `<button class="btn ${p.stone ? "outline" : "primary"}" data-action="stone-analyze" data-id="${esc(p.id)}" ${busy || (STX && !STX.ai) ? "disabled" : ""}>${busy ? "읽는 중…" : p.stone ? "다시 분석" : "AI 분석"}</button>` : ""}
       <button class="btn ${st === "unconfirmed" ? "primary" : "outline"}" data-action="stone-edit" data-id="${esc(p.id)}" ${busy ? "disabled" : ""}>${st === "unconfirmed" ? "검토하기" : p.stone ? "속성·프롬프트" : "직접 고르기"}</button>
@@ -956,7 +972,7 @@ function stoneEdit(id, fromPaste) {
   if (id) { const p = postById(id); if (!p) return; const s = p.stone || {};
     DX = { id, title: p.title, dna: JSON.parse(JSON.stringify(s.dna || {})), arguments: s.arguments || [], note: s.note || "", model: s.model || "", analyzedAt: s.analyzedAt || null, out: null }; }
   else DX = { ...fromPaste, id: null };
-  renderStoneDialog(); refreshStonePrompts();
+  renderStoneDialog(); renderModelBox(); refreshStonePrompts();
 }
 function renderStoneDialog() {
   const d = DX.dna, ro = DX.id && !S.canWrite ? "disabled" : "", min = STX?.confidenceMin ?? .7;
@@ -976,6 +992,7 @@ function renderStoneDialog() {
     ${DX.arguments?.length ? `<div class="field"><label>핵심 논점</label><ol class="dna-args">${DX.arguments.map(a => `<li>${esc(a)}</li>`).join("")}</ol></div>` : ""}
     <div class="field"><label>① 이미지 프롬프트 <span class="muted" style="font-weight:400">· 정적인 돌 원본 — 3D의 참조 이미지가 돼요</span></label><pre class="code dna-prompt" id="dna-img">${esc(o?.imagePrompt || "만드는 중…")}</pre></div>
     <div class="field"><label>② 3D 모델 프롬프트 <span class="muted" style="font-weight:400">· 이미지→3D(①의 이미지를 참조로), 웹에 넣을 GLB</span></label><pre class="code dna-prompt" id="dna-vid">${esc(o?.modelPrompt || "만드는 중…")}</pre>${o?.webMotion ? `<span class="hint">움직임은 모델에 넣지 않고 웹진 3D 뷰어의 카메라 값으로 써요: <span class="mono">${esc(o.webMotion.camera)}</span></span>` : ""}</div>
+    ${DX.id ? `<div class="field"><label>③ 3D 모델 (GLB) <span class="muted" style="font-weight:400">· 승인하면 웹진에서 기본 돌 대신 이 모델이 나와요</span></label><div id="dna-model"></div></div>` : ""}
     <div class="dialog-foot" style="flex-wrap:wrap">
       <button class="btn outline" data-action="stone-copy" data-v="img">${icon("copy")}이미지 프롬프트</button>
       <button class="btn outline" data-action="stone-copy" data-v="vid">${icon("copy")}3D 모델 프롬프트</button>
@@ -1222,6 +1239,103 @@ function catsView() {
   </div>`;
 }
 
+
+
+/* ---------- 돌 3D 모델(GLB) 올리기 ----------
+   고르면 브라우저에서 먼저 재 보고(GLB인지, 크기·삼각형·텍스처), 저장소(Vercel Blob)에 바로 올린 뒤 그 글의 '후보'로.
+   승인하면 웹진이 기본 돌 대신 이 모델을 써요. 미리보기는 웹진과 같은 3D 코드(stones.js). */
+const fmtMB = b => (Number(b || 0) / 1048576).toFixed(b >= 10485760 ? 0 : 1) + "MB";
+let blobLoad = null, MDL = { busy: false, progress: "" };
+// 미리보기는 웹진과 같은 3D 코드(/stone/stones.js)로 그려요 — 어드민에서 보이면 웹진에서도 읽혀요
+let stonesMod = null;
+const stones3d = () => stonesMod || (stonesMod = import("/stone/stones.js"));
+const blobClient = () => blobLoad || (blobLoad = import("https://cdn.jsdelivr.net/npm/@vercel/blob@2.9.0/client/+esm"));
+// GLB를 열어 보지 않고 머리말(JSON)만 읽어 재요. 텍스처 크기는 이미지를 디코드해서
+async function inspectGlb(file) {
+  const fail = code => Object.assign(new Error(code), { code });
+  const buf = await file.arrayBuffer(), dv = new DataView(buf);
+  if (buf.byteLength < 28 || dv.getUint32(0, true) !== 0x46546C67) throw fail("not_glb");
+  if (dv.getUint32(4, true) !== 2) throw fail("old_glb");
+  const jl = dv.getUint32(12, true); if (dv.getUint32(16, true) !== 0x4E4F534A) throw fail("not_glb");
+  let j; try { j = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 20, jl))); } catch { throw fail("not_glb"); }
+  const binAt = 20 + jl, hasBin = buf.byteLength >= binAt + 8 && dv.getUint32(binAt + 4, true) === 0x004E4942, binData = binAt + 8;
+  const uses = new Map(); (j.nodes || []).forEach(n => { if (n.mesh != null) uses.set(n.mesh, (uses.get(n.mesh) || 0) + 1); });
+  let triangles = 0, vertices = 0;
+  (j.meshes || []).forEach((m, i) => { const k = uses.get(i) || 1; (m.primitives || []).forEach(pr => {
+    const pos = j.accessors?.[pr.attributes?.POSITION]; if (pos) vertices += pos.count * k;
+    if ((pr.mode ?? 4) !== 4) return;
+    const n = pr.indices != null ? j.accessors?.[pr.indices]?.count : pos?.count; triangles += Math.floor((n || 0) / 3) * k; }); });
+  const external = [...(j.buffers || []).filter(b => b.uri), ...(j.images || []).filter(im => im.uri && !/^data:/.test(im.uri))].length;
+  if (external) throw fail("external");
+  const req = j.extensionsRequired || [];
+  if (req.includes("KHR_texture_basisu")) throw fail("basisu");
+  const textures = [];
+  for (const im of j.images || []) {
+    let w = 0, h = 0;
+    try {
+      const bv = j.bufferViews?.[im.bufferView];
+      if (bv && hasBin) { const bmp = await createImageBitmap(new Blob([new Uint8Array(buf, binData + (bv.byteOffset || 0), bv.byteLength)], { type: im.mimeType || "image/png" })); w = bmp.width; h = bmp.height; bmp.close?.(); }
+    } catch {}
+    textures.push({ w, h, type: im.mimeType || "" });
+  }
+  return { bytes: file.size, triangles, vertices, meshes: (j.meshes || []).length, materials: (j.materials || []).length, textures, extensions: j.extensionsUsed || [], name: file.name };
+}
+function modelWarn(s) {
+  const B = STX?.modelBudget || { bytes: 6291456, triangles: 120000, texture: 2048 }, w = [];
+  if (s.bytes > B.bytes) w.push(`파일이 ${fmtMB(s.bytes)}예요(권장 ${fmtMB(B.bytes)} 이하)`);
+  if (s.triangles > B.triangles) w.push(`삼각형이 ${s.triangles.toLocaleString()}개예요(권장 ${B.triangles.toLocaleString()}개 이하)`);
+  const big = (s.textures || []).filter(t => Math.max(t.w, t.h) > B.texture); if (big.length) w.push(`${B.texture}px보다 큰 텍스처가 ${big.length}장 있어요`);
+  return w;
+}
+const statLine = s => `${fmtMB(s.bytes)} · 삼각형 ${Number(s.triangles || 0).toLocaleString()} · 텍스처 ${(s.textures || []).length}장${(s.textures || []).length ? ` (${[...new Set(s.textures.map(t => t.w ? `${t.w}px` : "?"))].join(", ")})` : ""}${(s.extensions || []).length ? ` · ${s.extensions.map(x => x.replace(/^(KHR_|EXT_)/, "")).join(", ")}` : ""}`;
+function renderModelBox() {
+  const box = $("#dna-model"); if (!box || !DX?.id) return;
+  const p = postById(DX.id), m = p?.stoneModel || {}, w = S.canWrite;
+  const one = (x, kind) => `<div class="mdl"><div class="mdl-head">${kind === "approved" ? `${icon("check")}승인됨 · 웹진에 나오는 중` : "검토 대기 · 아직 웹진에 안 나와요"}<span class="muted" style="font-weight:400;margin-left:auto">${fmtDate(x.approvedAt || x.uploadedAt)}</span></div>
+      <canvas class="mdl-view" data-src="${esc(x.url)}" role="img" aria-label="${esc(p.title)} 3D 모델 미리보기 · 끌어서 돌려 보기"></canvas><span class="mdl-err" hidden>이 모델을 웹진의 3D 로더로 읽지 못했어요. 파일이 깨졌거나 지원하지 않는 형식이에요.</span>
+      <span class="mdl-stats">${esc(x.name || "")}${x.name ? " · " : ""}${esc(statLine(x))}</span>
+      ${(x.warnings || []).length ? `<ul class="mdl-warn">${x.warnings.map(t => `<li>${esc(t)}</li>`).join("")}</ul>` : ""}
+      ${w ? `<div class="mdl-actions">${kind === "candidate" ? `<button class="btn primary sm" data-action="model-approve">${icon("check")}승인</button><button class="btn ghost sm danger" data-action="model-reject">${icon("x")}후보 버리기</button>` : `<button class="btn ghost sm danger" data-action="model-remove">${icon("trash")}내리고 기본 돌로</button>`}</div>` : ""}
+    </div>`;
+  box.innerHTML = `${m.candidate ? one(m.candidate, "candidate") : ""}${m.approved ? one(m.approved, "approved") : ""}
+    ${!m.candidate && !m.approved ? `<p class="hint">아직 올린 모델이 없어요. 지금은 기본 돌 12개 중 하나가 나와요.</p>` : ""}
+    ${w ? `<div class="mdl-actions"><button class="btn outline sm" data-action="model-pick" ${MDL.busy ? "disabled" : ""}>${icon("upload")}${m.candidate || m.approved ? "다른 GLB 올리기" : "GLB 올리기"}</button>
+      <span class="mdl-progress">${esc(MDL.progress || `GLB 한 파일 · 최대 ${fmtMB(STX?.modelMaxBytes || 41943040)} · 권장 ${fmtMB(STX?.modelBudget?.bytes || 6291456)} 이하, 삼각형 ${(STX?.modelBudget?.triangles || 120000).toLocaleString()}개 이하, 텍스처 ${STX?.modelBudget?.texture || 2048}px 이하`)}</span></div>
+      <input type="file" id="glb-file" accept=".glb,model/gltf-binary" hidden>` : ""}`;
+  if (m.candidate || m.approved) stones3d().then(M => box.querySelectorAll("canvas.mdl-view").forEach(cv =>
+    M.preview(cv, { src: cv.dataset.src, custom: true, gem: false, hue: 0, sat: 1 }, () => { cv.hidden = true; cv.nextElementSibling.hidden = false; }))).catch(() => {});
+}
+async function modelUpload(file) {
+  const id = DX?.id; if (!id || MDL.busy) return;
+  const why = { not_glb: "GLB 파일이 아니에요(.glb, glTF 2.0 바이너리만).", old_glb: "glTF 1.0 파일이에요. glTF 2.0으로 내보내 주세요.", external: "텍스처나 데이터가 바깥 파일로 떨어져 있어요. 한 파일(GLB)에 모두 담아 내보내 주세요.", basisu: "KTX2(Basis) 텍스처는 웹진에서 못 읽어요. PNG·JPEG·WebP 텍스처로 내보내 주세요." };
+  if (file.size > (STX?.modelMaxBytes || 41943040)) { toast("파일이 너무 커요", `${fmtMB(file.size)} · 최대 ${fmtMB(STX?.modelMaxBytes || 41943040)}. 텍스처·삼각형을 줄여 주세요.`, "err"); return; }
+  MDL.busy = true; MDL.progress = "파일을 재는 중…"; renderModelBox();
+  try {
+    const stats = await inspectGlb(file), warn = modelWarn(stats);
+    if (warn.length && !(await new Promise(r => { if (!confirm(`무거운 모델이에요. 웹진이 느려질 수 있어요.\n\n· ${warn.join("\n· ")}\n\n그래도 올릴까요?`)) r(false); else r(true); }))) { MDL.progress = ""; return; }
+    MDL.progress = "올리는 중… 0%"; renderModelBox();
+    const { upload } = await blobClient();
+    const blob = await upload(`stones/${id}.glb`, file, { access: "public", handleUploadUrl: "/api/stone-upload", headers: { authorization: "Bearer " + encodeURIComponent(PW) }, contentType: "model/gltf-binary", multipart: file.size > 8 * 1048576,
+      onUploadProgress: e => { MDL.progress = `올리는 중… ${Math.round(e.percentage)}%`; const el = $("#dna-model .mdl-progress"); if (el) el.textContent = MDL.progress; } });
+    const r = await stonePost({ action: "model-use", id, url: blob.url, stats });
+    const p = postById(id); if (p) { if (r.stoneModel) p.stoneModel = r.stoneModel; else delete p.stoneModel; }
+    MDL.progress = ""; toast("3D 모델을 올렸어요", "미리보기를 확인하고 승인하면 웹진에 나와요.", "ok");
+  } catch (e) {
+    MDL.progress = "";
+    toast("3D 모델을 올리지 못했어요", why[e.code] || (e.code === 401 || /unauthorized/i.test(e.message) ? "다시 로그인해 주세요." : "연결을 확인한 뒤 다시 시도해 주세요."), "err");
+  } finally { MDL.busy = false; renderModelBox(); if (S.view === "stones") renderStoneCard(id); }
+}
+async function modelAct(action) {
+  const id = DX?.id; if (!id) return;
+  if (action === "model-remove" && !(await new Promise(r => r(confirm("승인된 3D 모델을 내릴까요? 파일도 지워지고, 웹진엔 다시 기본 돌이 나와요."))))) return;
+  MDL.busy = true; renderModelBox();
+  try {
+    const r = await stonePost({ action, id });
+    const p = postById(id); if (p) { if (r.stoneModel) p.stoneModel = r.stoneModel; else delete p.stoneModel; }
+    toast({ "model-approve": "승인했어요", "model-reject": "후보를 버렸어요", "model-remove": "내렸어요" }[action], action === "model-approve" ? "1~2분 안에 웹진에 나와요." : "", "ok");
+  } catch (e) { toast("처리하지 못했어요", "연결을 확인한 뒤 다시 시도해 주세요.", "err"); }
+  finally { MDL.busy = false; renderModelBox(); if (S.view === "stones") renderStoneCard(id); }
+}
 
 /* ---------- 태그 ----------
    태그 = 글들의 태그 + 태그 메뉴에서 만든 태그(S.tags, 아직 글이 없어도 남아 있음). 이름이 같으면 같은 태그.
@@ -1946,6 +2060,8 @@ document.addEventListener("click", async e => {
     case "stone-paste": stonePasteDialog(); break;
     case "stone-paste-run": stonePasteRun(t); break;
     case "stone-legend": stoneLegendDialog(); break;
+    case "model-pick": $("#glb-file")?.click(); break;
+    case "model-approve": case "model-reject": case "model-remove": modelAct(t.dataset.action); break;
     case "stone-copy": { const o = DX?.out; const txt = t.dataset.v === "img" ? o?.imagePrompt : t.dataset.v === "vid" ? o?.modelPrompt
         : JSON.stringify({ title: DX.title || "", ...Object.fromEntries(DNA_KEYS.filter(k => DX.dna[k]).map(k => [k, DX.dna[k].value])), arguments: DX.arguments || [], confidence: Object.fromEntries(DNA_KEYS.filter(k => DX.dna[k]).map(k => [k, DX.dna[k].confidence])), imagePrompt: o?.imagePrompt, modelPrompt: o?.modelPrompt, modelSpec: o?.modelSpec, webMotion: o?.webMotion }, null, 2);
       try { await navigator.clipboard.writeText(txt || ""); toast("복사했어요", "", "ok"); } catch { toast("복사하지 못했어요", "직접 선택해 복사해 주세요.", "err"); } break; }
@@ -1969,6 +2085,7 @@ document.addEventListener("click", async e => {
 });
 // 이미지: 파일 선택 / 붙여넣기 / 끌어다 놓기
 document.addEventListener("change", e => {
+  if (e.target.id === "glb-file" && e.target.files[0]) { modelUpload(e.target.files[0]); e.target.value = ""; return; }
   if (e.target.dataset?.tagSel !== undefined) { const n = e.target.dataset.tagSel; e.target.checked ? TGV.sel.add(n) : TGV.sel.delete(n); renderView(); return; }
   const dk = e.target.dataset?.dna;
   if (dk && DX) {   // 사람이 고른 값은 확신도 100%, 근거는 그대로

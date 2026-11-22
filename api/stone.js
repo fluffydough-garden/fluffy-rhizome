@@ -1,9 +1,11 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
+import { del } from "@vercel/blob";
 import { readDb, writeDb, latestVersion, authed, json, unauthorized } from "../lib/store.js";
 import { THEMES, EXPERIENCES, PATTERNS, STANCES, MOTIONS, FORMATS, FIELDS, CONFIDENCE_MIN, DNA_VERSION,
-  cleanDna, lowConfidence, isComplete, colorRule, stoneImagePrompt, stoneModelPrompt, webMotionOf, MODEL_SPEC, dnaSummary } from "../lib/stone.js";
+  cleanDna, lowConfidence, isComplete, colorRule, stoneImagePrompt, stoneModelPrompt, webMotionOf, MODEL_SPEC, dnaSummary,
+  isOurModel, cleanModelStats, modelWarnings, MODEL_MAX_BYTES, MODEL_BUDGET } from "../lib/stone.js";
 
 // 돌 DNA: 전시 리뷰를 읽고 돌의 속성(색·형태·무늬·표면·내포물·움직임)을 정해진 값 중에서 고르고,
 // 이미지(정적인 돌, 3D의 참조 이미지)·3D 모델(GLB, 이미지→3D) 프롬프트를 만들어요. 어드민 비밀번호가 필요해요.
@@ -13,7 +15,12 @@ import { THEMES, EXPERIENCES, PATTERNS, STANCES, MOTIONS, FORMATS, FIELDS, CONFI
 //  POST /api/stone { action: "analyze", title, body, info }   붙여넣은 원문을 분석 (저장은 안 함)
 //  POST /api/stone { action: "prompts", dna }       고친 DNA로 프롬프트만 다시 만들기
 //  POST /api/stone { action: "save", id, dna, confirmed }    글에 저장 (confirmed = 편집자가 확인함)
-//  POST /api/stone { action: "clear", id }          글의 돌 DNA 지우기
+//  POST /api/stone { action: "clear", id }          글의 돌 DNA 지우기 (3D 모델은 그대로)
+//  3D 모델(GLB): 브라우저가 /api/stone-upload로 받은 토큰으로 저장소에 바로 올린 뒤
+//  POST /api/stone { action: "model-use", id, url, stats }   올린 GLB를 그 글의 '후보'로
+//  POST /api/stone { action: "model-approve", id }           후보를 승인 → 웹진이 이 모델을 씀
+//  POST /api/stone { action: "model-reject", id }            후보 버리기(파일도 지움)
+//  POST /api/stone { action: "model-remove", id }            승인본 내리기(파일도 지움) → 다시 기본 돌
 
 export const config = { maxDuration: 120 };
 
@@ -112,7 +119,7 @@ export async function GET(req) {
   if (!authed(req)) return unauthorized();
   return json({ themes: THEMES, experiences: EXPERIENCES, patterns: PATTERNS, stances: STANCES, motions: MOTIONS, formats: FORMATS,
     fields: Object.fromEntries(Object.entries(FIELDS).map(([k, f]) => [k, { ko: f.ko, optional: !!f.optional, range: f.range || null }])),
-    confidenceMin: CONFIDENCE_MIN, version: DNA_VERSION, ai: !!process.env.ANTHROPIC_API_KEY });
+    confidenceMin: CONFIDENCE_MIN, version: DNA_VERSION, ai: !!process.env.ANTHROPIC_API_KEY, modelMaxBytes: MODEL_MAX_BYTES, modelBudget: MODEL_BUDGET });
 }
 
 export async function POST(req) {
@@ -138,6 +145,36 @@ export async function POST(req) {
       if (e.status) return json({ error: e.message }, e.status);
       return json({ error: "no_result" }, 502);   // 응답이 정해진 값을 벗어나는 등
     }
+  }
+
+  if (action.startsWith("model-")) {
+    if (!id) return json({ error: "bad_id" }, 400);
+    if (action === "model-use" && !isOurModel(b.url)) return json({ error: "bad_url" }, 400);
+    const garbage = [];
+    const r = await mutate(id, p => {
+      garbage.length = 0;
+      const m = { ...(p.stoneModel || {}) }, now = new Date().toISOString();
+      if (action === "model-use") {
+        if (m.candidate?.url && m.candidate.url !== m.approved?.url) garbage.push(m.candidate.url);
+        const stats = cleanModelStats({ ...(b.stats || {}) });
+        m.candidate = { url: b.url, ...stats, warnings: modelWarnings(stats), uploadedAt: now };
+      } else if (action === "model-approve") {
+        if (!m.candidate) return;
+        if (m.approved?.url && m.approved.url !== m.candidate.url) garbage.push(m.approved.url);
+        m.approved = { ...m.candidate, approvedAt: now }; delete m.candidate;
+      } else if (action === "model-reject") {
+        if (m.candidate?.url && m.candidate.url !== m.approved?.url) garbage.push(m.candidate.url);
+        delete m.candidate;
+      } else if (action === "model-remove") {
+        if (m.approved?.url) garbage.push(m.approved.url);
+        delete m.approved;
+      } else return;
+      if (m.candidate || m.approved) p.stoneModel = m; else delete p.stoneModel;
+    });
+    if (r.error) return json(r, 404);
+    if (garbage.length) await del(garbage.filter(isOurModel)).catch(() => {});
+    const db = await readDb();
+    return json({ stoneModel: db.posts[id]?.stoneModel || null });
   }
 
   if (action === "save" || action === "clear") {

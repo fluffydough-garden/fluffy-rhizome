@@ -11,6 +11,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { ConvexGeometry } from "three/addons/geometries/ConvexGeometry.js";
+import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 
 export { THREE };
 const REDUCE = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -20,7 +21,8 @@ export const OPACITY = .92;
 // 유리질 보석 재질 (o88 gem 세트의 값: iridescence .85 · IOR 1.5 · 180–620nm · clearcoat .75/.05 · emissive .14)
 export const GEM = { opacity: OPACITY, iridescence: .85, iridescenceIOR: 1.5, thickness: [180, 620], clearcoat: .75, clearcoatRoughness: .05, emissive: .14 };
 
-const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
+// 기본 돌은 meshopt, 어드민에서 올린 GLB는 Draco로 압축돼 있을 수도 있어요
+const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).setDRACOLoader(new DRACOLoader().setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.7/"));
 const shapes = new Map();
 
 /* 모양 하나: 가운데 정렬 · 가장 긴 변 = 1 로 맞춘 원본(공유) + 외곽 점(물리 충돌·마우스 판정용) */
@@ -65,7 +67,9 @@ function tintable(m, hue = 0, sat = 1) {
   m.customProgramCacheKey = () => "stone-hue";
   return m;
 }
-function materialFor(src, gem, hue, sat) {
+function materialFor(src, gem, hue, sat, custom) {
+  // 어드민에서 올린 모델: 파일의 재질을 그대로(불투명도도 파일 값). 깊이만 기록해 무더기에서 뒤엉키지 않게
+  if (custom) { const m = src.clone(); m.userData.o0 = m.transparent ? m.opacity : 1; m.depthWrite = true; return m; }
   // 무더기에서 앞뒤 돌이 뒤엉켜 보이지 않게 깊이는 기록해요(파일 권장값은 depthWrite=false지만, 0.88이면 이 편이 깔끔)
   if (!gem) { const m = src.clone(); m.transparent = true; m.opacity = OPACITY; m.depthWrite = true; m.side = THREE.DoubleSide; return tintable(m, hue, sat); }
   return tintable(new THREE.MeshPhysicalMaterial({
@@ -84,7 +88,9 @@ export async function makeStone(stone) {
   const group = new THREE.Group(), body = new THREE.Group();
   group.add(body);
   const mats = [];
-  S.meshes.forEach(m => { const mat = materialFor(m.material, stone.gem, stone.hue || 0, stone.sat ?? 1); mats.push(mat); const mesh = new THREE.Mesh(m.geometry, mat); mesh.castShadow = mesh.receiveShadow = true; body.add(mesh); });
+  S.meshes.forEach(m => { const mk = x => materialFor(x, stone.gem, stone.hue || 0, stone.sat ?? 1, stone.custom);
+    const mat = Array.isArray(m.material) ? m.material.map(mk) : mk(m.material); mats.push(...[].concat(mat));   // 메시 하나에 재질이 여럿일 수도(올린 GLB)
+    const mesh = new THREE.Mesh(m.geometry, mat); mesh.castShadow = mesh.receiveShadow = true; body.add(mesh); });
   const hit = new THREE.Mesh(S.hull, new THREE.MeshBasicMaterial({ visible: false }));
   body.add(hit);
   group.userData = { stone, shape: S, body, hit, mats, rattle: new Rattle(stone.seed) };
@@ -105,7 +111,7 @@ export function setLight(group, v) {
 }
 export function setOpacity(group, a) {
   const { mats } = group.userData;
-  mats.forEach(m => { const o = OPACITY * a; m.opacity = o; m.depthWrite = o > .5; });
+  mats.forEach(m => { const base = m.userData.o0 ?? OPACITY, o = base * a; m.opacity = o; if (m.userData.o0 !== undefined) { const tr = o < .999; if (m.transparent !== tr) { m.transparent = tr; m.needsUpdate = true; } } m.depthWrite = o > .5; });
 }
 
 /* 덜걱거림: hot이 되면 빠르게 좌우로 덜걱(점점 잦아듦) + 위로 살짝 떠올라 머물며 천천히 흔들려요.
@@ -184,6 +190,31 @@ export function thumb(stone, px = 256) {
   queue = pr.catch(() => {});
   thumbs.set(key, pr);
   return pr;
+}
+
+/* ---------- 미리보기: 캔버스 하나에 돌 하나 (어드민의 3D 모델 확인용) ----------
+   웹진과 같은 로더라서, 여기서 보이면 웹진에서도 읽혀요. 끌면 돌리고, 놓으면 천천히 혼자 돌아요. 캔버스가 화면에서 빠지면 저절로 정리 */
+export async function preview(canvas, stone, onError) {
+  const renderer = makeRenderer(canvas), scene = new THREE.Scene(); lights(renderer, scene, { env: .85 });
+  const cam = new THREE.PerspectiveCamera(30, 1, .05, 50); cam.position.set(0, .3, 2.3); cam.lookAt(0, 0, 0);
+  let g = null, alive = true, raf = 0, last = performance.now(), rx = .25, ry = 0, drag = null, vy = .45;
+  const size = () => { const r = canvas.getBoundingClientRect(); if (!r.width) return; renderer.setSize(r.width, r.height, false); cam.aspect = r.width / r.height; cam.updateProjectionMatrix(); };
+  const dispose = () => { if (!alive) return; alive = false; cancelAnimationFrame(raf); renderer.dispose(); try { renderer.forceContextLoss(); } catch {} };
+  canvas.addEventListener("pointerdown", e => { drag = { x: e.clientX, y: e.clientY }; canvas.setPointerCapture(e.pointerId); });
+  canvas.addEventListener("pointermove", e => { if (!drag) return; ry += (e.clientX - drag.x) * .01; rx = Math.max(-1.2, Math.min(1.2, rx + (e.clientY - drag.y) * .01)); vy = (e.clientX - drag.x) * .6; drag = { x: e.clientX, y: e.clientY }; });
+  canvas.addEventListener("pointerup", () => { drag = null; });
+  const loop = now => {
+    if (!alive) return; if (!canvas.isConnected) return dispose();
+    raf = requestAnimationFrame(loop);
+    const dt = Math.min(.05, (now - last) / 1000); last = now;
+    if (!drag && !REDUCE) { vy += (.45 - vy) * (1 - Math.exp(-dt * 2)); ry += vy * dt; }
+    if (g) g.rotation.set(rx, ry, 0);
+    size(); renderer.render(scene, cam);
+  };
+  raf = requestAnimationFrame(loop);
+  try { g = await makeStone({ seed: .3, ...stone }); if (alive) scene.add(g); }
+  catch (e) { dispose(); onError && onError(e); }
+  return { dispose };
 }
 
 /* ---------- 리좀 지도 위의 돌 ----------

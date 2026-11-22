@@ -254,6 +254,8 @@ function index() {
     // 색: 글마다 색조를 조금씩 돌려요(±STONE_HUE도). 같은 모양을 다시 쓰는 글은 크게 돌려서 확실히 다르게
     const hue = Math.round(lap ? (R() < .5 ? -1 : 1) * (70 + R() * 110) : (R() * 2 - 1) * STONE_HUE), sat = +(.85 + R() * .35).toFixed(2);
     p._stone = { ...STONES[shape], shape, gem, hue: pick.hue ?? hue, sat: pick.sat ?? sat, size: clamp(.62 + .7 * Math.sqrt(p._chars / 12000), .6, 1.4), seed: R(), spin: .08 + R() * .14 };
+    // 어드민에서 이 글의 3D 모델(GLB)을 올려 승인했으면 기본 돌 대신 그 모델을 그대로(색조·보석 재질을 덧입히지 않음)
+    if (p.stoneModel && p.stoneModel.url) Object.assign(p._stone, { id: "custom", name: "custom", src: p.stoneModel.url, custom: true, gem: false, hue: 0, sat: 1 });
   });
   const seen = new Set(); LINKS = [];
   (DATA.links || []).forEach(l => {
