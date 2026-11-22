@@ -599,7 +599,7 @@ document.addEventListener("keydown", e => {
   else if (st.post) writeHash(st.concepts, null);
   else if (st.concepts.length) writeHash([], null);
 });
-let rz; addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => { size(); seedMotes(); drawAll(); }, 100); });
+let rz; addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => { size(); seedMotes(); if (G) drawAll(); }, 100); });   // 지도가 준비되기 전이면 크기만
 
 /* ===================== status · chrome text (language-aware) ===================== */
 function renderStatus() {

@@ -17,7 +17,7 @@ export { THREE };
 const REDUCE = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 // 돌 불투명도: 0.88 = 단단한 광물에 빛이 살짝 비침 (0.75 = 더 유리 같음, 0.95 = 거의 불투명) — o88 세트 값
-export const OPACITY = .92;
+export const OPACITY = .94;
 // 유리질 보석 재질 (o88 gem 세트의 값: iridescence .85 · IOR 1.5 · 180–620nm · clearcoat .75/.05 · emissive .14)
 export const GEM = { opacity: OPACITY, iridescence: .85, iridescenceIOR: 1.5, thickness: [180, 620], clearcoat: .75, clearcoatRoughness: .05, emissive: .14 };
 
@@ -190,6 +190,29 @@ export function thumb(stone, px = 256) {
   queue = pr.catch(() => {});
   thumbs.set(key, pr);
   return pr;
+}
+
+/* ---------- 로고: 왼쪽 위 이름 옆의 작은 돌 ----------
+   천천히 혼자 돌고, 로고(링크)에 마우스를 올리면 덜걱거려요. 캔버스가 화면에서 빠지면(언어를 바꿔 다시 그리면) 저절로 정리 */
+export async function logo(canvas, stone) {
+  const renderer = makeRenderer(canvas), scene = new THREE.Scene(); lights(renderer, scene, { env: .9, key: 2.4 });
+  const cam = new THREE.PerspectiveCamera(26, 1, .05, 20); cam.position.set(0, .2, 2.5); cam.lookAt(0, 0, 0);
+  const host = canvas.closest("a") || canvas;
+  let g = null, alive = true, raf = 0, last = performance.now(), hot = false;
+  const enter = () => { hot = true; }, leave = () => { hot = false; };
+  host.addEventListener("pointerenter", enter); host.addEventListener("pointerleave", leave);
+  const dispose = () => { if (!alive) return; alive = false; cancelAnimationFrame(raf); host.removeEventListener("pointerenter", enter); host.removeEventListener("pointerleave", leave); renderer.dispose(); try { renderer.forceContextLoss(); } catch {} };
+  const loop = now => {
+    if (!alive) return; if (!canvas.isConnected) return dispose();
+    raf = requestAnimationFrame(loop);
+    const dt = Math.min(.05, (now - last) / 1000); last = now;
+    const r = canvas.getBoundingClientRect(); if (r.width && (canvas.width !== Math.round(r.width * renderer.getPixelRatio()))) renderer.setSize(r.width, r.height, false);
+    if (g) { const R = g.userData.rattle; R.set(hot); R.step(dt); R.apply(g.userData.body, 1); if (!REDUCE) g.rotation.y += dt * .5; }
+    renderer.render(scene, cam);
+  };
+  raf = requestAnimationFrame(loop);
+  try { g = await makeStone({ seed: .4, ...stone }); g.rotation.set(.35, .6, .1); if (alive) { scene.add(g); canvas.classList.add("on"); } } catch { dispose(); }
+  return { dispose };
 }
 
 /* ---------- 미리보기: 캔버스 하나에 돌 하나 (어드민의 3D 모델 확인용) ----------
