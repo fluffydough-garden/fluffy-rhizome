@@ -455,43 +455,17 @@ function traceLoop() {
 }
 
 /* ===================== lens cursor ===================== */
-/* 커서 = 16px 어안렌즈 구슬(링크·버튼 위에선 32px). 렌즈 안에만 색 번짐(bloom)이 있는데,
-   multiply로 섞여서 어두운 바탕에선 안 보이고 밝은 글자·포자에 닿을 때만 색이 비쳐 보여요.
-   렌즈 굴절은 SVG 변위 필터(backdrop-filter:url())라 Chrome 계열에서만, 나머지 브라우저는 유리 느낌만. */
-const LENS = { s: 16, l: 32 };         // 렌즈 지름(px): 평소 · 호버 — 크기를 바꾸면 shared.css의 --lens·#lens-16/#lens-32도 같이
+/* 커서 = 16px 유리 구슬(링크·버튼 위에선 32px). 굴절·색 번짐은 뺐어요(블러 필터가 매 프레임 다시 계산돼서 무겁고, 없어도 충분해서).
+   크기는 shared.css의 --lens */
 const LENS_HOVER = "a,button,label,select,summary,[role=button],[data-read],[tabindex]:not([tabindex='-1']),.fb,.cn";
-function fishMap(D, a) {               // displacement map that pulls pixels toward the middle = magnify
-  const N = 64, c = document.createElement("canvas"); c.width = c.height = N;
-  const g = c.getContext("2d"), im = g.createImageData(N, N);
-  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
-    const nx = (x + .5) / N * 2 - 1, ny = (y + .5) / N * 2 - 1, r2 = nx * nx + ny * ny, i = (y * N + x) * 4;
-    const k = r2 < 1 ? -a * (1 - r2) * .5 : 0;   // displacement in units of D
-    im.data[i] = Math.round(255 * clamp(.5 + nx * k, 0, 1)); im.data[i + 1] = Math.round(255 * clamp(.5 + ny * k, 0, 1)); im.data[i + 2] = 128; im.data[i + 3] = 255;
-  }
-  g.putImageData(im, 0, 0);
-  return `<filter id="lens-${D}" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse" primitiveUnits="userSpaceOnUse">
-    <feImage href="${c.toDataURL()}" x="0" y="0" width="${D}" height="${D}" preserveAspectRatio="none" result="m"/>
-    <feDisplacementMap in="SourceGraphic" in2="m" scale="${D}" xChannelSelector="R" yChannelSelector="G"/></filter>`;
-}
 function lensInit() {
   if (!matchMedia("(hover: hover) and (pointer: fine)").matches || document.getElementById("lens")) return;
-  const chromium = !!(navigator.userAgentData && navigator.userAgentData.brands.some(b => /Chromium/.test(b.brand)));
-  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  svg.setAttribute("width", "0"); svg.setAttribute("height", "0"); svg.setAttribute("aria-hidden", "true"); svg.style.position = "absolute";
-  svg.innerHTML = fishMap(LENS.s, .9) + fishMap(LENS.l, 1.15);
-  const bloom = document.createElement("div"), lens = document.createElement("div");
-  bloom.id = "lens-bloom"; lens.id = "lens"; bloom.setAttribute("aria-hidden", "true"); lens.setAttribute("aria-hidden", "true");
-  if (chromium) lens.classList.add("refract");
-  document.body.append(svg, bloom, lens);
+  const lens = document.createElement("div");
+  lens.id = "lens"; lens.setAttribute("aria-hidden", "true");
+  document.body.append(lens);
   document.documentElement.classList.add("lens-on");
-  let x = -100, y = -100, bx = x, by = y, raf = 0, hover = false;
-  const place = () => {
-    raf = 0;
-    bx = x; by = y;   // the bloom sits exactly inside the bead
-    lens.style.transform = `translate(${x}px,${y}px)`;
-    bloom.style.transform = `translate(${bx}px,${by}px)`;
-    if (Math.abs(x - bx) + Math.abs(y - by) > .3) raf = requestAnimationFrame(place);
-  };
+  let x = -100, y = -100, raf = 0, hover = false;
+  const place = () => { raf = 0; lens.style.transform = `translate(${x}px,${y}px)`; };
   addEventListener("pointermove", e => {
     if (e.pointerType !== "mouse") return;
     x = e.clientX; y = e.clientY; document.documentElement.classList.remove("lens-out");

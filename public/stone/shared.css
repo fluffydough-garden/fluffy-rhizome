@@ -152,8 +152,7 @@ html.ko .about-card h2{font-family:var(--f-ko-display);text-transform:none}
 #toast.show{opacity:1}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}html{scroll-behavior:auto}}
 
-/* lens cursor: a 16px fisheye bead (32px over anything clickable). The colour bloom lives only inside the bead,
-   and multiply makes it show only where the bead is over something light (text, spores) */
+/* lens cursor: a plain 16px glass bead (32px over anything clickable). No refraction or colour; just a white ring and highlight */
 @media (hover:hover) and (pointer:fine){
   html.lens-on,html.lens-on *{cursor:none!important}
   html.lens-on input[type=text],html.lens-on input[type=search],html.lens-on textarea{cursor:text!important}
@@ -162,22 +161,12 @@ html{--lens:16px}
 html.lens-hover{--lens:32px}
 html.lens-down{--lens:13px}
 html.lens-hover.lens-down{--lens:26px}
-#lens,#lens-bloom{position:fixed;left:0;top:0;z-index:95;pointer-events:none;width:0;height:0;will-change:transform}
-#lens::before,#lens-bloom::before{content:"";position:absolute;left:calc(var(--lens) / -2);top:calc(var(--lens) / -2);width:var(--lens);height:var(--lens);border-radius:50%;
-  transition:width .35s cubic-bezier(.2,.9,.3,1.4),height .35s cubic-bezier(.2,.9,.3,1.4),left .35s cubic-bezier(.2,.9,.3,1.4),top .35s cubic-bezier(.2,.9,.3,1.4),opacity .2s}
-#lens::before{
-  -webkit-backdrop-filter:blur(.5px) saturate(1.8) brightness(1.25);backdrop-filter:blur(.5px) saturate(1.8) brightness(1.25);
-  background:radial-gradient(circle at 34% 30%,rgba(255,255,255,.95) 0 9%,rgba(255,255,255,.18) 26%,transparent 55%),radial-gradient(circle at 50% 50%,transparent 58%,rgba(120,220,255,.35) 78%,rgba(255,120,200,.55) 92%,transparent 100%);
-  box-shadow:0 0 0 .6px rgba(255,255,255,.75),0 0 6px rgba(200,160,255,.45)}
-#lens.refract::before{-webkit-backdrop-filter:url(#lens-16) saturate(1.8) brightness(1.2);backdrop-filter:url(#lens-16) saturate(1.8) brightness(1.2)}
-html.lens-hover #lens.refract::before{-webkit-backdrop-filter:url(#lens-32) saturate(2) brightness(1.25);backdrop-filter:url(#lens-32) saturate(2) brightness(1.25)}
-/* the bloom: orange-pink core, teal rim, swirling slowly — clipped to the bead */
-#lens-bloom{mix-blend-mode:multiply}
-#lens-bloom::before{overflow:hidden;
-  background:radial-gradient(circle at 46% 44%,#ffe45c 0 12%,#ff7a2f 28%,#ff5c9a 46%,#c86bff 62%,#33d1d6 78%,#3aa0ff 92%);
-  background-size:150% 150%;background-position:50% 50%;animation:bloom 6s ease-in-out infinite alternate}
-@keyframes bloom{0%{background-position:30% 35%;filter:hue-rotate(0deg)}50%{background-position:65% 55%}100%{background-position:45% 70%;filter:hue-rotate(-40deg)}}
-html.lens-out #lens::before,html.lens-out #lens-bloom::before{opacity:0}
+#lens{position:fixed;left:0;top:0;z-index:95;pointer-events:none;width:0;height:0;will-change:transform}
+#lens::before{content:"";position:absolute;left:calc(var(--lens) / -2);top:calc(var(--lens) / -2);width:var(--lens);height:var(--lens);border-radius:50%;
+  transition:width .35s cubic-bezier(.2,.9,.3,1.4),height .35s cubic-bezier(.2,.9,.3,1.4),left .35s cubic-bezier(.2,.9,.3,1.4),top .35s cubic-bezier(.2,.9,.3,1.4),opacity .2s;
+  background:radial-gradient(circle at 34% 30%,rgba(255,255,255,.95) 0 9%,rgba(255,255,255,.18) 26%,transparent 55%),rgba(255,255,255,.06);
+  box-shadow:0 0 0 .6px rgba(255,255,255,.75),0 0 6px rgba(255,255,255,.25)}
+html.lens-out #lens::before{opacity:0}
 
 
 /* ---------- 페이지 전환 (돌무더기 ↔ 리좀): 페이드 아웃 → 페이드 인, 탭 밑줄은 미끄러져 옮겨 가요 ---------- */
