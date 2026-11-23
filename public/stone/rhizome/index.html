@@ -102,7 +102,7 @@ p{margin:0}
 #labels:has(.fb:hover) .fb:not(:hover) .t,#labels:has(.fb:hover) .cn{opacity:.25}
 
 /* ---------- chrome ---------- */
-.btn{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border:1px solid rgba(var(--hypha),.7);border-radius:999px;color:var(--ink);background:rgba(14,15,21,.55);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+.btn{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border:1px solid rgba(var(--hypha),.7);border-radius:999px;color:var(--ink);background:rgba(14,15,21,.8);font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
 .btn:hover{border-color:rgba(var(--hypha),.6)}
 .btn[aria-pressed="true"]{border-color:var(--trace);color:var(--trace)}
 .btn.round{width:30px;padding:0;justify-content:center}
@@ -117,7 +117,7 @@ body.panel-open #status{display:none}
 #selbar .btn{border-color:rgba(var(--c),.6);color:rgb(var(--c))}
 
 /* ---------- index drawer (text alternative to the map) ---------- */
-#index{position:fixed;top:var(--nav-h);left:0;bottom:0;width:min(360px,100vw);z-index:45;background:rgba(14,15,21,.94);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border-right:1px solid rgba(var(--hypha),.14);transform:translateX(-102%);transition:transform .35s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column}
+#index{position:fixed;top:var(--nav-h);left:0;bottom:0;width:min(360px,100vw);z-index:45;background:rgba(14,15,21,.97);border-right:1px solid rgba(var(--hypha),.14);transform:translateX(-102%);transition:transform .35s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column}
 #index.open{transform:none}
 #index .head{display:flex;align-items:center;gap:8px;padding:18px 18px 12px}
 #index .head .mono{flex:1;color:var(--muted)}
@@ -134,7 +134,7 @@ body.panel-open #status{display:none}
 #index .posts button:hover{color:var(--spore)}
 
 /* ---------- right panel ---------- */
-#panel{position:fixed;top:var(--nav-h);right:0;bottom:0;width:var(--pw);z-index:45;background:rgba(14,15,21,.94);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);color:var(--paper-ink);transform:translateX(102%);transition:transform .4s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;box-shadow:-40px 0 80px rgba(0,0,0,.5)}
+#panel{position:fixed;top:var(--nav-h);right:0;bottom:0;width:var(--pw);z-index:45;background:rgba(14,15,21,.97);color:var(--paper-ink);transform:translateX(102%);transition:transform .4s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;box-shadow:-40px 0 80px rgba(0,0,0,.5)}
 #panel.open{transform:none}
 .p-top{display:flex;align-items:center;gap:10px;padding:18px 24px 0;color:var(--paper-muted)}
 .p-top .mono:first-child{flex:1}
@@ -288,7 +288,10 @@ function computeFocus() {
 const dish = $("#dish"), cvs = $("#myc"), ctx = cvs.getContext("2d"), sp = $("#spores"), sctx = sp.getContext("2d"), labels = $("#labels");
 let W = 0, H = 0, DPR = 1, T = d3.zoomIdentity, animUntil = 0;
 const zoom = d3.zoom().scaleExtent([.25, 4]).filter(e => !e.button && !(e.target.closest && e.target.closest(".cn,.fb")) || e.type === "wheel")
-  .on("zoom", e => { T = e.transform; drawAll(); });
+  .on("zoom", e => { T = e.transform; zoomDraw(); });
+// 줌 이벤트는 한 프레임에 여러 번 올 수 있어요. 다시 그리기는 프레임마다 한 번만
+let zoomRaf = 0;
+function zoomDraw() { if (!zoomRaf) zoomRaf = requestAnimationFrame(() => { zoomRaf = 0; drawAll(); }); }
 d3.select(dish).call(zoom).on("dblclick.zoom", null);
 function size() {
   W = innerWidth; H = innerHeight; DPR = Math.min(2, devicePixelRatio || 1);
@@ -445,9 +448,12 @@ function release(fromId) {
 }
 let raf = 0;
 function kick() { if (!raf) raf = requestAnimationFrame(loop); }
+let odd = false;
 function loop() {
   raf = 0;
   const t = now();
+  // 별만 반짝일 때(균사가 자라거나 먼지가 날지 않을 때)는 한 프레임 걸러 그려요. 반짝임은 느려서 30fps로도 같아 보여요
+  if (!bursts.length && t >= animUntil && (odd = !odd)) { kick(); return; }
   if (t < animUntil) drawMyc();
   sctx.setTransform(DPR, 0, 0, DPR, 0, 0); sctx.clearRect(0, 0, W, H);
   motes.forEach(m => { m.x = (m.x + m.vx + W) % W; const a = REDUCE ? m.a : m.a * (.55 + .45 * Math.sin(t / 1000 * m.tw + m.ph)); sctx.fillStyle = `rgba(${HY},${a})`; sctx.beginPath(); sctx.arc(m.x, m.y, m.r, 0, 6.29); sctx.fill(); });
@@ -629,13 +635,23 @@ let hoverId = null;
 labels.addEventListener("pointerover", e => { const fb = e.target.closest(".fb"); hoverId = fb ? fb.dataset.node : null; });
 labels.addEventListener("pointerleave", () => { hoverId = null; });
 labels.addEventListener("pointerout", e => { const fb = e.target.closest(".fb"); if (fb && !fb.contains(e.relatedTarget)) hoverId = null; });
+// 돌의 투명도: CSS(.fb 투명도 규칙)와 같은 값을 클래스만 보고 계산해요. getComputedStyle을 매 프레임 읽으면 스타일 계산을 다시 하게 돼서요.
+// .fb의 opacity 전환(.35s)도 여기서 같은 속도로 따라가요
+const lc = labels.classList;
+function fbAlpha(c) {
+  if (lc.contains("focus") && !c.contains("focus") && !c.contains("near") && !c.contains("far") && !c.contains("both")) return c.contains("dormant") ? .4 : .16;
+  if (lc.contains("trace") && !c.contains("read")) return .18;
+  return c.contains("far") ? .75 : 1;
+}
+let alphaT = 0;
 function stoneItems() {
   if (!G) return [];
+  const t = performance.now(), k = alphaT ? 1 - Math.exp(-(t - alphaT) / 110) : 1; alphaT = t;
   const zk = clamp(Math.pow(T.k, .6), .45, 1.7), out = [], focusId = hoverId || st.peek || st.post;
   for (const el of labels.children) {
     const n = el._n; if (!n || n.type !== "p") continue;
     out.push({ id: n.id, stone: n.post._stone, x: T.applyX(n.x), y: T.applyY(n.y), px: TIER_SIZE[n.tier] * zk,
-      hot: hoverId === n.id || st.peek === n.id, alpha: +getComputedStyle(el).opacity,
+      hot: hoverId === n.id || st.peek === n.id, alpha: (el._a = el._a === undefined ? fbAlpha(el.classList) : el._a + (fbAlpha(el.classList) - el._a) * k),
       // 포커스: 올려 둔 돌(없으면 열어 둔 글의 돌)만 밝게, 나머지는 어둡게
       light: !focusId ? 0 : focusId === n.id ? 1 : -1 });
   }

@@ -67,18 +67,19 @@ function tintable(m, hue = 0, sat = 1) {
   m.customProgramCacheKey = () => "stone-hue";
   return m;
 }
+// forceSinglePass: 양면 투명 재질을 three는 뒷면·앞면 두 번 그려요. 0.94면 거의 불투명이라 한 번에 그려도 차이가 거의 없어요
 function materialFor(src, gem, hue, sat, custom) {
   // 어드민에서 올린 모델: 파일의 재질을 그대로(불투명도도 파일 값). 깊이만 기록해 무더기에서 뒤엉키지 않게
-  if (custom) { const m = src.clone(); m.userData.o0 = m.transparent ? m.opacity : 1; m.depthWrite = true; return m; }
+  if (custom) { const m = src.clone(); m.userData.o0 = m.transparent ? m.opacity : 1; m.depthWrite = true; m.forceSinglePass = true; return m; }
   // 무더기에서 앞뒤 돌이 뒤엉켜 보이지 않게 깊이는 기록해요(파일 권장값은 depthWrite=false지만, 0.88이면 이 편이 깔끔)
-  if (!gem) { const m = src.clone(); m.transparent = true; m.opacity = OPACITY; m.depthWrite = true; m.side = THREE.DoubleSide; return tintable(m, hue, sat); }
+  if (!gem) { const m = src.clone(); m.transparent = true; m.opacity = OPACITY; m.depthWrite = true; m.side = THREE.DoubleSide; m.forceSinglePass = true; return tintable(m, hue, sat); }
   return tintable(new THREE.MeshPhysicalMaterial({
     map: src.map, normalMap: src.normalMap, normalScale: src.normalScale, roughnessMap: src.roughnessMap, metalnessMap: src.metalnessMap,
     roughness: Math.min(src.roughness ?? .4, .35), metalness: src.metalness ?? 0,
     iridescence: GEM.iridescence, iridescenceIOR: GEM.iridescenceIOR, iridescenceThicknessRange: GEM.thickness,
     clearcoat: GEM.clearcoat, clearcoatRoughness: GEM.clearcoatRoughness, specularIntensity: 1,
     emissive: 0xffffff, emissiveMap: src.map, emissiveIntensity: GEM.emissive,
-    transparent: true, opacity: GEM.opacity, depthWrite: true, side: THREE.DoubleSide
+    transparent: true, opacity: GEM.opacity, depthWrite: true, side: THREE.DoubleSide, forceSinglePass: true
   }), hue, sat);
 }
 
@@ -156,9 +157,12 @@ export function lights(renderer, scene, o = {}) {
   const rim = new THREE.DirectionalLight(0xffb48a, o.rim ?? .9); rim.position.set(4, -1, -3); scene.add(rim);
   return { key, rim };
 }
-export function makeRenderer(canvas, o = {}) {
-  const r = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: "high-performance", ...o });
-  r.setPixelRatio(Math.min(2, devicePixelRatio || 1));
+// 화면 전체 캔버스는 해상도 상한 1.5, 그 이상(레티나)에서는 안티에일리어싱을 꺼요(돌 가장자리가 부드러워서 티가 거의 안 나요).
+// 작은 캔버스(로고·미리보기)는 { maxDpr: 2 }로 예전처럼 선명하게
+export function makeRenderer(canvas, { maxDpr = 1.5, ...o } = {}) {
+  const dpr = Math.min(maxDpr, devicePixelRatio || 1);
+  const r = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: dpr < 1.5 || maxDpr > 1.5, powerPreference: "high-performance", ...o });
+  r.setPixelRatio(dpr);
   r.outputColorSpace = THREE.SRGBColorSpace;
   r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.05;
   r.setClearColor(0x000000, 0);
@@ -195,7 +199,7 @@ export function thumb(stone, px = 256) {
 /* ---------- 로고: 왼쪽 위 이름 옆의 작은 돌 ----------
    천천히 혼자 돌고, 로고(링크)에 마우스를 올리면 덜걱거려요. 캔버스가 화면에서 빠지면(언어를 바꿔 다시 그리면) 저절로 정리 */
 export async function logo(canvas, stone) {
-  const renderer = makeRenderer(canvas), scene = new THREE.Scene(); lights(renderer, scene, { env: .9, key: 2.4 });
+  const renderer = makeRenderer(canvas, { maxDpr: 2 }), scene = new THREE.Scene(); lights(renderer, scene, { env: .9, key: 2.4 });
   const cam = new THREE.PerspectiveCamera(26, 1, .05, 20); cam.position.set(0, .2, 2.5); cam.lookAt(0, 0, 0);
   const host = canvas.closest("a") || canvas;
   let g = null, alive = true, raf = 0, last = performance.now(), hot = false;
@@ -218,7 +222,7 @@ export async function logo(canvas, stone) {
 /* ---------- 미리보기: 캔버스 하나에 돌 하나 (어드민의 3D 모델 확인용) ----------
    웹진과 같은 로더라서, 여기서 보이면 웹진에서도 읽혀요. 끌면 돌리고, 놓으면 천천히 혼자 돌아요. 캔버스가 화면에서 빠지면 저절로 정리 */
 export async function preview(canvas, stone, onError) {
-  const renderer = makeRenderer(canvas), scene = new THREE.Scene(); lights(renderer, scene, { env: .85 });
+  const renderer = makeRenderer(canvas, { maxDpr: 2 }), scene = new THREE.Scene(); lights(renderer, scene, { env: .85 });
   const cam = new THREE.PerspectiveCamera(30, 1, .05, 50); cam.position.set(0, .3, 2.3); cam.lookAt(0, 0, 0);
   let g = null, alive = true, raf = 0, last = performance.now(), rx = .25, ry = 0, drag = null, vy = .45;
   const size = () => { const r = canvas.getBoundingClientRect(); if (!r.width) return; renderer.setSize(r.width, r.height, false); cam.aspect = r.width / r.height; cam.updateProjectionMatrix(); };

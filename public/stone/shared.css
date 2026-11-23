@@ -91,7 +91,7 @@ html.ko .pill-btn{font-family:var(--f-head);letter-spacing:0;text-transform:none
 #trace{position:fixed;inset:0;width:100%;height:100%;z-index:35;pointer-events:none}
 
 /* reader */
-#reader{position:fixed;top:var(--nav-h);right:0;bottom:0;width:min(600px,100vw);z-index:50;background:rgba(14,15,21,.94);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border-left:1px solid rgba(255,255,255,.1);
+#reader{position:fixed;top:var(--nav-h);right:0;bottom:0;width:min(600px,100vw);z-index:50;background:rgba(14,15,21,.97);border-left:1px solid rgba(255,255,255,.1);
   transform:translateX(102%);transition:transform .45s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;box-shadow:-40px 0 80px rgba(0,0,0,.5)}
 #reader.open{transform:none}
 .r-top{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid rgba(255,255,255,.1);color:var(--muted)}
